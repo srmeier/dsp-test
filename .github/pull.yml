@@ -1,7 +1,7 @@
 version: "1"
 rules:
   - base: master
-    upstream: kfp-tekton:master
+    upstream: kubeflow:master
     mergeMethod: none # don't automatically merge
     mergeUnstable: false
 label: "do-not-merge/hold"
