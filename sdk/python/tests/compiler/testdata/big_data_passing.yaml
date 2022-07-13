@@ -97,21 +97,25 @@ spec:
                 fieldPath: metadata.labels['custom.tekton.dev/originalPipelineRun']
         - image: busybox
           name: output-taskrun-name
-          script: |
-            #!/bin/sh
-            set -exo pipefail
-            echo -n "$(context.taskRun.name)" > $(results.taskrun-name.path)
+          command:
+          - sh
+          - -ec
+          - echo -n "$(context.taskRun.name)" > "$(results.taskrun-name.path)"
         - image: busybox
           name: copy-results-artifacts
-          script: |
-            #!/bin/sh
+          command:
+          - sh
+          - -ec
+          - |
             set -exo pipefail
             TOTAL_SIZE=0
             ARTIFACT_SIZE=`wc -c $(workspaces.repeat-line.path)/artifacts/$ORIG_PR_NAME/$(context.taskRun.name)/output_text | awk '{print $1}'`
             TOTAL_SIZE=$( expr $TOTAL_SIZE + $ARTIFACT_SIZE)
             touch $(results.output-text.path)
             if [[ $TOTAL_SIZE -lt 3072 ]]; then
-              cp $(workspaces.repeat-line.path)/artifacts/$ORIG_PR_NAME/$(context.taskRun.name)/output_text $(results.output-text.path)
+              if ! awk "/[^[:print:]]/{f=1} END{exit !f}" $(workspaces.repeat-line.path)/artifacts/$ORIG_PR_NAME/$(context.taskRun.name)/output_text; then
+                cp $(workspaces.repeat-line.path)/artifacts/$ORIG_PR_NAME/$(context.taskRun.name)/output_text $(results.output-text.path)
+              fi
             fi
           onError: continue
           env:
@@ -146,8 +150,10 @@ spec:
         steps:
         - image: busybox
           name: copy-inputs
-          script: |
-            #!/bin/sh
+          command:
+          - sh
+          - -ec
+          - |
             set -exo pipefail
             echo -n "one
             two
@@ -212,27 +218,33 @@ spec:
                 fieldPath: metadata.labels['custom.tekton.dev/originalPipelineRun']
         - image: busybox
           name: output-taskrun-name
-          script: |
-            #!/bin/sh
-            set -exo pipefail
-            echo -n "$(context.taskRun.name)" > $(results.taskrun-name.path)
+          command:
+          - sh
+          - -ec
+          - echo -n "$(context.taskRun.name)" > "$(results.taskrun-name.path)"
         - image: busybox
           name: copy-results-artifacts
-          script: |
-            #!/bin/sh
+          command:
+          - sh
+          - -ec
+          - |
             set -exo pipefail
             TOTAL_SIZE=0
             ARTIFACT_SIZE=`wc -c $(workspaces.split-text-lines.path)/artifacts/$ORIG_PR_NAME/$(context.taskRun.name)/odd_lines | awk '{print $1}'`
             TOTAL_SIZE=$( expr $TOTAL_SIZE + $ARTIFACT_SIZE)
             touch $(results.odd-lines.path)
             if [[ $TOTAL_SIZE -lt 3072 ]]; then
-              cp $(workspaces.split-text-lines.path)/artifacts/$ORIG_PR_NAME/$(context.taskRun.name)/odd_lines $(results.odd-lines.path)
+              if ! awk "/[^[:print:]]/{f=1} END{exit !f}" $(workspaces.split-text-lines.path)/artifacts/$ORIG_PR_NAME/$(context.taskRun.name)/odd_lines; then
+                cp $(workspaces.split-text-lines.path)/artifacts/$ORIG_PR_NAME/$(context.taskRun.name)/odd_lines $(results.odd-lines.path)
+              fi
             fi
             ARTIFACT_SIZE=`wc -c $(workspaces.split-text-lines.path)/artifacts/$ORIG_PR_NAME/$(context.taskRun.name)/even_lines | awk '{print $1}'`
             TOTAL_SIZE=$( expr $TOTAL_SIZE + $ARTIFACT_SIZE)
             touch $(results.even-lines.path)
             if [[ $TOTAL_SIZE -lt 3072 ]]; then
-              cp $(workspaces.split-text-lines.path)/artifacts/$ORIG_PR_NAME/$(context.taskRun.name)/even_lines $(results.even-lines.path)
+              if ! awk "/[^[:print:]]/{f=1} END{exit !f}" $(workspaces.split-text-lines.path)/artifacts/$ORIG_PR_NAME/$(context.taskRun.name)/even_lines; then
+                cp $(workspaces.split-text-lines.path)/artifacts/$ORIG_PR_NAME/$(context.taskRun.name)/even_lines $(results.even-lines.path)
+              fi
             fi
           onError: continue
           env:
@@ -432,21 +444,25 @@ spec:
                 fieldPath: metadata.labels['custom.tekton.dev/originalPipelineRun']
         - image: busybox
           name: output-taskrun-name
-          script: |
-            #!/bin/sh
-            set -exo pipefail
-            echo -n "$(context.taskRun.name)" > $(results.taskrun-name.path)
+          command:
+          - sh
+          - -ec
+          - echo -n "$(context.taskRun.name)" > "$(results.taskrun-name.path)"
         - image: busybox
           name: copy-results-artifacts
-          script: |
-            #!/bin/sh
+          command:
+          - sh
+          - -ec
+          - |
             set -exo pipefail
             TOTAL_SIZE=0
             ARTIFACT_SIZE=`wc -c $(workspaces.write-numbers.path)/artifacts/$ORIG_PR_NAME/$(context.taskRun.name)/numbers | awk '{print $1}'`
             TOTAL_SIZE=$( expr $TOTAL_SIZE + $ARTIFACT_SIZE)
             touch $(results.numbers.path)
             if [[ $TOTAL_SIZE -lt 3072 ]]; then
-              cp $(workspaces.write-numbers.path)/artifacts/$ORIG_PR_NAME/$(context.taskRun.name)/numbers $(results.numbers.path)
+              if ! awk "/[^[:print:]]/{f=1} END{exit !f}" $(workspaces.write-numbers.path)/artifacts/$ORIG_PR_NAME/$(context.taskRun.name)/numbers; then
+                cp $(workspaces.write-numbers.path)/artifacts/$ORIG_PR_NAME/$(context.taskRun.name)/numbers $(results.numbers.path)
+              fi
             fi
           onError: continue
           env:
@@ -600,21 +616,25 @@ spec:
                 fieldPath: metadata.labels['custom.tekton.dev/originalPipelineRun']
         - image: busybox
           name: output-taskrun-name
-          script: |
-            #!/bin/sh
-            set -exo pipefail
-            echo -n "$(context.taskRun.name)" > $(results.taskrun-name.path)
+          command:
+          - sh
+          - -ec
+          - echo -n "$(context.taskRun.name)" > "$(results.taskrun-name.path)"
         - image: busybox
           name: copy-results-artifacts
-          script: |
-            #!/bin/sh
+          command:
+          - sh
+          - -ec
+          - |
             set -exo pipefail
             TOTAL_SIZE=0
             ARTIFACT_SIZE=`wc -c $(workspaces.sum-numbers.path)/artifacts/$ORIG_PR_NAME/$(context.taskRun.name)/Output | awk '{print $1}'`
             TOTAL_SIZE=$( expr $TOTAL_SIZE + $ARTIFACT_SIZE)
             touch $(results.output.path)
             if [[ $TOTAL_SIZE -lt 3072 ]]; then
-              cp $(workspaces.sum-numbers.path)/artifacts/$ORIG_PR_NAME/$(context.taskRun.name)/Output $(results.output.path)
+              if ! awk "/[^[:print:]]/{f=1} END{exit !f}" $(workspaces.sum-numbers.path)/artifacts/$ORIG_PR_NAME/$(context.taskRun.name)/Output; then
+                cp $(workspaces.sum-numbers.path)/artifacts/$ORIG_PR_NAME/$(context.taskRun.name)/Output $(results.output.path)
+              fi
             fi
           onError: continue
           env:
