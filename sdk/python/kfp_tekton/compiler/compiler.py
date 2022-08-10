@@ -150,6 +150,8 @@ class TektonCompiler(Compiler):
 
   def _set_pipeline_conf(self, tekton_pipeline_conf: TektonPipelineConf):
     self.pipeline_labels = tekton_pipeline_conf.pipeline_labels
+    self.pipeline_labels['pipelines.kubeflow.org/pipelinename'] = ''
+    self.pipeline_labels['pipelines.kubeflow.org/generation'] = ''
     self.pipeline_annotations = tekton_pipeline_conf.pipeline_annotations
     self.tekton_inline_spec = tekton_pipeline_conf.tekton_inline_spec
     self.resource_in_separate_yaml = tekton_pipeline_conf.resource_in_separate_yaml
@@ -326,7 +328,7 @@ class TektonCompiler(Compiler):
                 replace_str = param[1] + '-'
                 self.loops_pipeline[group_name]['spec']['params'].append({
                   'name': param[0], 'value': '$(tasks.%s.results.%s)' % (
-                    param[1], sanitize_k8s_name(param[0].replace(replace_str, '', 1))
+                    param[1], sanitize_k8s_name(param[0].replace(replace_str, '', 1), allow_capital=True)
                   )
                 })
               if not param[1]:
@@ -370,7 +372,7 @@ class TektonCompiler(Compiler):
             replace_str = param[1] + '-'
             custom_task['spec']['params'].append({
               'name': param[0], 'value': '$(tasks.%s.results.%s)' % (
-                param[1], sanitize_k8s_name(param[0].replace(replace_str, '', 1))
+                param[1], sanitize_k8s_name(param[0].replace(replace_str, '', 1), allow_capital=True)
               )
             })
           if not param[1] and param[0] not in param_list:
@@ -385,7 +387,7 @@ class TektonCompiler(Compiler):
           if pipe_param[0] == '':
             s = s.replace("{{pipelineparam:op=%s;name=%s}}" % pipe_param, '$(params.%s)' % pipe_param[1])
           else:
-            param_name = sanitize_k8s_name(pipe_param[1])
+            param_name = sanitize_k8s_name(pipe_param[1], allow_capital=True)
             s = s.replace("{{pipelineparam:op=%s;name=%s}}" % pipe_param, '$(tasks.%s.results.%s)' % (
               sanitize_k8s_name(pipe_param[0]),
               param_name))
@@ -398,7 +400,7 @@ class TektonCompiler(Compiler):
           if v.op_name is None:
             v = '$(params.%s)' % v.name
           else:
-            param_name = sanitize_k8s_name(v.name)
+            param_name = sanitize_k8s_name(v.name, allow_capital=True)
             v = '$(tasks.%s.results.%s)' % (
               sanitize_k8s_name(v.op_name),
               param_name)
@@ -467,7 +469,7 @@ class TektonCompiler(Compiler):
         if pipeline_param.op_name is None:
           withparam_value = '$(params.%s)' % pipeline_param.name
         else:
-          param_name = sanitize_k8s_name(pipeline_param.name)
+          param_name = sanitize_k8s_name(pipeline_param.name, allow_capital=True)
           withparam_value = '$(tasks.%s.results.%s)' % (
             sanitize_k8s_name(pipeline_param.op_name),
             param_name)
@@ -495,7 +497,7 @@ class TektonCompiler(Compiler):
                 if v.op_name is None:
                   v = '$(params.%s)' % v.name
                 else:
-                  param_name = sanitize_k8s_name(v.name)
+                  param_name = sanitize_k8s_name(v.name, allow_capital=True)
                   v = '$(tasks.%s.results.%s)' % (
                     sanitize_k8s_name(v.op_name),
                     param_name)
@@ -522,7 +524,8 @@ class TektonCompiler(Compiler):
         parameter_value = str(parameter)
         if isinstance(parameter, dsl.PipelineParam):
           if parameter.op_name:
-            parameter_value = '$(tasks.' + parameter.op_name + '.results.' + sanitize_k8s_name(parameter.name) + ')'
+            parameter_value = '$(tasks.' + parameter.op_name + '.results.' + \
+                               sanitize_k8s_name(parameter.name, allow_capital=True) + ')'
           else:
             parameter_value = '$(params.' + parameter.name + ')'
         return parameter_value
@@ -956,7 +959,7 @@ class TektonCompiler(Compiler):
               def map_cel_vars(a):
                 if a.get('type', '') == dsl.PipelineParam:
                   op_name = sanitize_k8s_name(a['op_name'])
-                  output_name = sanitize_k8s_name(a['output_name'])
+                  output_name = sanitize_k8s_name(a['output_name'], allow_capital=True)
                   return '$(tasks.%s.results.%s)' % (op_name, output_name)
                 else:
                   return a.get('value', '')
@@ -1011,7 +1014,7 @@ class TektonCompiler(Compiler):
 
             # Only one of --taskRef and --taskSpec allowed.
             if custom_task_args.get('taskRef', '') and custom_task_args.get('taskSpec', ''):
-              raise("Custom task invalid configuration %s, Only one of --taskRef and --taskSpec allowed." % custom_task_args)
+              raise ("Custom task invalid configuration %s, Only one of --taskRef and --taskSpec allowed." % custom_task_args)
             if custom_task_args.get('taskRef', ''):
               try:
                 custom_task_cr = {
@@ -1030,7 +1033,7 @@ class TektonCompiler(Compiler):
                 if custom_task_cr:
                   self.custom_task_crs.append(custom_task_cr)
               except ValueError:
-                raise("Custom task ref %s is not a valid Python Dictionary" % custom_task_args['taskRef'])
+                raise ("Custom task ref %s is not a valid Python Dictionary" % custom_task_args['taskRef'])
             # Setting --taskRef flag indicates, that spec be inlined.
             if custom_task_args.get('taskSpec', ''):
               try:
@@ -1045,7 +1048,7 @@ class TektonCompiler(Compiler):
                   }
                 }
               except ValueError:
-                raise("Custom task spec %s is not a valid Python Dictionary" % custom_task_args['taskSpec'])
+                raise ("Custom task spec %s is not a valid Python Dictionary" % custom_task_args['taskSpec'])
             # Pop custom task artifacts since we have no control of how
             # custom task controller is handling the container/task execution.
             self.artifact_items.pop(template['metadata']['name'], None)
@@ -1054,8 +1057,6 @@ class TektonCompiler(Compiler):
         if task_ref.get('taskSpec', ''):
           task_ref['taskSpec']['metadata'] = task_ref['taskSpec'].get('metadata', {})
           task_labels = template['metadata'].get('labels', {})
-          task_labels['pipelines.kubeflow.org/pipelinename'] = task_labels.get('pipelines.kubeflow.org/pipelinename', '')
-          task_labels['pipelines.kubeflow.org/generation'] = task_labels.get('pipelines.kubeflow.org/generation', '')
           cache_default = self.pipeline_labels.get('pipelines.kubeflow.org/cache_enabled', 'true')
           task_labels['pipelines.kubeflow.org/cache_enabled'] = task_labels.get('pipelines.kubeflow.org/cache_enabled', cache_default)
 
@@ -1083,13 +1084,15 @@ class TektonCompiler(Compiler):
           # Process input parameters if needed
           if isinstance(condition.operand1, dsl.PipelineParam):
             if condition.operand1.op_name:
-              operand_value = '$(tasks.' + condition.operand1.op_name + '.results.' + sanitize_k8s_name(condition.operand1.name) + ')'
+              operand_value = '$(tasks.' + condition.operand1.op_name + '.results.' + \
+                               sanitize_k8s_name(condition.operand1.name, allow_capital=True) + ')'
             else:
               operand_value = '$(params.' + condition.operand1.name + ')'
             input_params.append(operand_value)
           if isinstance(condition.operand2, dsl.PipelineParam):
             if condition.operand2.op_name:
-              operand_value = '$(tasks.' + condition.operand2.op_name + '.results.' + sanitize_k8s_name(condition.operand2.name) + ')'
+              operand_value = '$(tasks.' + condition.operand2.op_name + '.results.' + \
+                               sanitize_k8s_name(condition.operand2.name, allow_capital=True) + ')'
             else:
               operand_value = '$(params.' + condition.operand2.name + ')'
             input_params.append(operand_value)
@@ -1226,7 +1229,12 @@ class TektonCompiler(Compiler):
                 for pp in op.inputs:
                   if pipeline_param == pp.full_name:
                     # Parameters from Tekton results need to be sanitized
-                    substitute_param = '$(tasks.%s.results.%s)' % (sanitize_k8s_name(pp.op_name), sanitize_k8s_name(pp.name))
+                    substitute_param = ''
+                    if pp.op_name:
+                      substitute_param = '$(tasks.%s.results.%s)' % (sanitize_k8s_name(pp.op_name),
+                                                                     sanitize_k8s_name(pp.name, allow_capital=True))
+                    else:
+                      substitute_param = '$(params.%s)' % pipeline_param
                     tp['value'] = re.sub('\$\(inputs.params.%s\)' % pipeline_param, substitute_param, tp.get('value', ''))
                     break
         # Not necessary for Tekton execution
@@ -1386,6 +1394,45 @@ class TektonCompiler(Compiler):
       pipeline_run['spec']['podTemplate']['nodeSelector'] = copy.deepcopy(pipeline_conf.default_pod_node_selector)
     workflow = pipeline_run
 
+    # populate dependend condition for all the runafter tasks
+    def populate_runafter_condition(task):
+      task_runafter = task.get('runAfter')
+      if task_runafter:
+        for t in workflow['spec']['pipelineSpec']['tasks']:
+          if t['name'] in task_runafter:
+            if t.get('when'):
+              task.setdefault('when', [])
+              for when_item in t['when']:
+                if when_item not in task['when']:
+                  add_conditions = True
+                  # Do not add condition if the condition is not in the same graph/pipelineloop
+                  for pipeline_loop in self.loops_pipeline.values():
+                    if task['name'] in pipeline_loop['task_list']:
+                      task_input = re.findall('\$\(tasks.([^ \t\n.:,;{}]+).results.([^ \t\n.:,;{}]+)\)', when_item['input'])
+                      if task_input and task_input[0][0] not in pipeline_loop['task_list']:
+                        add_conditions = False
+                  if add_conditions:
+                    task['when'].append(when_item)
+
+    # search runafter tree logic before populating the condition
+    visited_tasks = {}
+    task_queue = []
+    for task in workflow['spec']['pipelineSpec']['tasks']:
+      task_runafter = task.get('runAfter')
+      if task_runafter:
+        task_queue.append(task)
+    while task_queue:
+      popped_task = task_queue.pop(0)
+      populate_condition = True
+      for queued_task in task_queue:
+        if queued_task['name'] in popped_task['runAfter'] and len(task_queue) != visited_tasks.get(popped_task['name']):
+          visited_tasks[popped_task['name']] = len(task_queue)
+          task_queue.append(popped_task)
+          populate_condition = False
+          break
+      if populate_condition:
+        populate_runafter_condition(popped_task)
+
     return workflow
 
   def _sanitize_and_inject_artifact(self, pipeline: dsl.Pipeline, pipeline_conf=None):
@@ -1406,15 +1453,15 @@ class TektonCompiler(Compiler):
           if len(param.op_name) > 128:
             raise ValueError('Input parameter cannot be longer than 128 characters. \
              \nInput name: %s. \nOp name: %s' % (param.op_name, op.name))
-          param.op_name = sanitize_k8s_name(param.op_name, max_length=float('inf'))
+          param.op_name = sanitize_k8s_name(param.op_name, max_length=float('inf'), allow_capital=True)
       # sanitized output params
       for param in op.outputs.values():
         param.name = sanitize_k8s_name(param.name, True)
         if param.op_name:
-          param.op_name = sanitize_k8s_name(param.op_name)
+          param.op_name = sanitize_k8s_name(param.op_name, allow_capital=True)
       if op.output is not None and not isinstance(op.output, dsl._container_op._MultipleOutputsError):
         op.output.name = sanitize_k8s_name(op.output.name, True)
-        op.output.op_name = sanitize_k8s_name(op.output.op_name)
+        op.output.op_name = sanitize_k8s_name(op.output.op_name, allow_capital=True)
       if op.dependent_names:
         op.dependent_names = [sanitize_k8s_name(name) for name in op.dependent_names]
       if isinstance(op, dsl.ContainerOp) and op.file_outputs is not None:
@@ -1808,8 +1855,6 @@ class TektonCompiler(Compiler):
       if 'taskSpec' in workflow_tasks[j]:
         workflow_tasks[j]['taskSpec']['metadata'] = workflow_tasks[j]['taskSpec'].get('metadata', {})
         task_labels = workflow_tasks[j]['taskSpec']['metadata'].get('labels', {})
-        task_labels['pipelines.kubeflow.org/pipelinename'] = task_labels.get('pipelines.kubeflow.org/pipelinename', '')
-        task_labels['pipelines.kubeflow.org/generation'] = task_labels.get('pipelines.kubeflow.org/generation', '')
         cache_default = self.pipeline_labels.get('pipelines.kubeflow.org/cache_enabled', 'true')
         task_labels['pipelines.kubeflow.org/cache_enabled'] = task_labels.get('pipelines.kubeflow.org/cache_enabled', cache_default)
         workflow_tasks[j]['taskSpec']['metadata']['labels'] = task_labels

@@ -113,12 +113,47 @@ class TestTektonCompiler(unittest.TestCase):
     from .testdata.sequential import sequential_pipeline
     self._test_pipeline_workflow(sequential_pipeline, 'sequential.yaml', skip_noninlined=True)
 
+  def test_custom_task_output_workflow(self):
+    """
+    Test compiling a custom task output workflow.
+    """
+    from .testdata.custom_task_output import uppercase_vs_lowercase
+    self._test_pipeline_workflow(uppercase_vs_lowercase, 'custom_task_output.yaml', skip_noninlined=True)
+
   def test_parallel_join_workflow(self):
     """
     Test compiling a parallel join workflow.
     """
     from .testdata.parallel_join import download_and_join
     self._test_pipeline_workflow(download_and_join, 'parallel_join.yaml', skip_noninlined=True)
+
+  def test_custom_task_exit_workflow(self):
+    """
+    Test compiling a custom task exit workflow.
+    """
+    from .testdata.custom_task_exit import test_pipeline
+    self._test_pipeline_workflow(test_pipeline, 'custom_task_exit.yaml', skip_noninlined=True)
+
+  def test_big_data_multi_volumes_1_workflow(self):
+    """
+    Test compiling a big data pipeline with multiple types of volumes workflow.
+    """
+    from .testdata.big_data_multi_volumes_1 import big_data
+    self._test_pipeline_workflow(big_data, 'big_data_multi_volumes_1.yaml', skip_noninlined=True)
+
+  def test_big_data_multi_volumes_2_workflow(self):
+    """
+    Test compiling a big data pipeline with multiple types of volumes workflow.
+    """
+    from .testdata.big_data_multi_volumes_2 import big_data
+    self._test_pipeline_workflow(big_data, 'big_data_multi_volumes_2.yaml', skip_noninlined=True)
+
+  def test_condition_depend_workflow(self):
+    """
+    Test compiling a condition depend workflow.
+    """
+    from .testdata.condition_depend import pipeline
+    self._test_pipeline_workflow(pipeline, 'condition_depend.yaml', skip_noninlined=True)
 
   def test_recur_cond_workflow(self):
     """

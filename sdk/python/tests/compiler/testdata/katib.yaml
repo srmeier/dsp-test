@@ -24,7 +24,7 @@ metadata:
     tekton.dev/artifact_bucket: mlpipeline
     tekton.dev/artifact_endpoint: minio-service.kubeflow:9000
     tekton.dev/artifact_endpoint_scheme: http://
-    tekton.dev/artifact_items: '{"mnist-hpo": [["bestHyperParameter", "$(results.besthyperparameter.path)"]],
+    tekton.dev/artifact_items: '{"mnist-hpo": [["bestHyperParameter", "$(results.bestHyperParameter.path)"]],
       "my-out-cop": []}'
     sidecar.istio.io/inject: "false"
     pipelines.kubeflow.org/big_data_passing_format: $(workspaces.$TASK_NAME.path)/artifacts/$ORIG_PR_NAME/$TASKRUN_NAME/$TASK_PARAM_NAME
@@ -37,6 +37,9 @@ metadata:
       true, "type": "Integer"}, {"default": "60", "name": "experimentTimeoutMinutes",
       "optional": true, "type": "Integer"}, {"default": "True", "name": "deleteAfterDone",
       "optional": true, "type": "Boolean"}], "name": "launch-katib-experiment"}'
+  labels:
+    pipelines.kubeflow.org/pipelinename: ''
+    pipelines.kubeflow.org/generation: ''
 spec:
   params:
   - name: deleteAfterDone
@@ -122,7 +125,7 @@ spec:
             ''5''}}, {''name'': ''--optimizer'', ''parameterType'': ''categorical'',
             ''feasibleSpace'': {''list'': [''sgd'', ''adam'', ''ftrl'']}}]'
           - --outputFile
-          - $(results.besthyperparameter.path)
+          - $(results.bestHyperParameter.path)
           - --deleteAfterDone
           - $(inputs.params.deleteAfterDone)
           - --experimentTimeoutMinutes
@@ -137,13 +140,11 @@ spec:
         - name: namespace
         - name: parallelTrialCount
         results:
-        - name: besthyperparameter
+        - name: bestHyperParameter
           type: string
           description: /tmp/outputs/bestHyperParameter/data
         metadata:
           labels:
-            pipelines.kubeflow.org/pipelinename: ''
-            pipelines.kubeflow.org/generation: ''
             pipelines.kubeflow.org/cache_enabled: "true"
           annotations:
             pipelines.kubeflow.org/component_spec_digest: '{"name": "mnist-hpo", "outputs":
@@ -153,7 +154,7 @@ spec:
     - name: my-out-cop
       params:
       - name: mnist-hpo-bestHyperParameter
-        value: $(tasks.mnist-hpo.results.besthyperparameter)
+        value: $(tasks.mnist-hpo.results.bestHyperParameter)
       taskSpec:
         steps:
         - name: main
@@ -168,8 +169,6 @@ spec:
         - name: mnist-hpo-bestHyperParameter
         metadata:
           labels:
-            pipelines.kubeflow.org/pipelinename: ''
-            pipelines.kubeflow.org/generation: ''
             pipelines.kubeflow.org/cache_enabled: "true"
           annotations:
             pipelines.kubeflow.org/component_spec_digest: '{"name": "my-out-cop",

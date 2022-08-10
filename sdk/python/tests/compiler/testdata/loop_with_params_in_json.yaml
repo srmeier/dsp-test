@@ -26,13 +26,16 @@ metadata:
     tekton.dev/artifact_endpoint: minio-service.kubeflow:9000
     tekton.dev/artifact_endpoint_scheme: http://
     tekton.dev/artifact_items: '{"consume": [], "consume-2": [], "consume-3": [],
-      "consume-4": [], "consume-5": [], "produce-message": [["Output", "$(results.output.path)"]],
-      "produce-message-2": [["Output", "$(results.output.path)"]]}'
+      "consume-4": [], "consume-5": [], "produce-message": [["Output", "$(results.Output.path)"]],
+      "produce-message-2": [["Output", "$(results.Output.path)"]]}'
     sidecar.istio.io/inject: "false"
     pipelines.kubeflow.org/big_data_passing_format: $(workspaces.$TASK_NAME.path)/artifacts/$ORIG_PR_NAME/$TASKRUN_NAME/$TASK_PARAM_NAME
     pipelines.kubeflow.org/pipeline_spec: '{"inputs": [{"name": "fname1", "type":
       "String"}, {"name": "fname2", "type": "String"}], "name": "Parallelfor pipeline
       param in items resolving"}'
+  labels:
+    pipelines.kubeflow.org/pipelinename: ''
+    pipelines.kubeflow.org/generation: ''
 spec:
   params:
   - name: fname1
@@ -55,7 +58,7 @@ spec:
           - --fname1
           - $(inputs.params.fname1)
           - '----output-paths'
-          - $(results.output.path)
+          - $(results.Output.path)
           command:
           - sh
           - -ec
@@ -101,13 +104,11 @@ spec:
         params:
         - name: fname1
         results:
-        - name: output
+        - name: Output
           type: string
           description: /tmp/outputs/Output/data
         metadata:
           labels:
-            pipelines.kubeflow.org/pipelinename: ''
-            pipelines.kubeflow.org/generation: ''
             pipelines.kubeflow.org/cache_enabled: "true"
           annotations:
             pipelines.kubeflow.org/component_spec_digest: '{"name": "Produce message",
@@ -126,7 +127,7 @@ spec:
           - --fname1
           - $(inputs.params.fname2)
           - '----output-paths'
-          - $(results.output.path)
+          - $(results.Output.path)
           command:
           - sh
           - -ec
@@ -172,13 +173,11 @@ spec:
         params:
         - name: fname2
         results:
-        - name: output
+        - name: Output
           type: string
           description: /tmp/outputs/Output/data
         metadata:
           labels:
-            pipelines.kubeflow.org/pipelinename: ''
-            pipelines.kubeflow.org/generation: ''
             pipelines.kubeflow.org/cache_enabled: "true"
           annotations:
             pipelines.kubeflow.org/component_spec_digest: '{"name": "Produce message",
@@ -232,8 +231,6 @@ spec:
                   type: string
                 metadata:
                   labels:
-                    pipelines.kubeflow.org/pipelinename: ''
-                    pipelines.kubeflow.org/generation: ''
                     pipelines.kubeflow.org/cache_enabled: "true"
                   annotations:
                     pipelines.kubeflow.org/component_spec_digest: '{"name": "Consume",
@@ -243,8 +240,6 @@ spec:
           iterateParam: loop-item-param-1
         metadata:
           labels:
-            pipelines.kubeflow.org/pipelinename: ''
-            pipelines.kubeflow.org/generation: ''
             pipelines.kubeflow.org/cache_enabled: "true"
     - name: parallelfor-pipeline-param-in-items-reso-for-loop-4
       params:
@@ -295,8 +290,6 @@ spec:
                   type: string
                 metadata:
                   labels:
-                    pipelines.kubeflow.org/pipelinename: ''
-                    pipelines.kubeflow.org/generation: ''
                     pipelines.kubeflow.org/cache_enabled: "true"
                   annotations:
                     pipelines.kubeflow.org/component_spec_digest: '{"name": "Consume",
@@ -336,8 +329,6 @@ spec:
                   type: string
                 metadata:
                   labels:
-                    pipelines.kubeflow.org/pipelinename: ''
-                    pipelines.kubeflow.org/generation: ''
                     pipelines.kubeflow.org/cache_enabled: "true"
                   annotations:
                     pipelines.kubeflow.org/component_spec_digest: '{"name": "Consume",
@@ -347,14 +338,12 @@ spec:
           iterateParam: loop-item-param-3
         metadata:
           labels:
-            pipelines.kubeflow.org/pipelinename: ''
-            pipelines.kubeflow.org/generation: ''
             pipelines.kubeflow.org/cache_enabled: "true"
     - name: parallelfor-pipeline-param-in-items-reso-for-loop-6
       params:
       - name: loop-item-param-5
-        value: '[{"first_name": "$(params.fname1)", "message": "$(tasks.produce-message.results.output)"},
-          {"first_name": "$(params.fname2)", "message": "$(tasks.produce-message-2.results.output)"}]'
+        value: '[{"first_name": "$(params.fname1)", "message": "$(tasks.produce-message.results.Output)"},
+          {"first_name": "$(params.fname2)", "message": "$(tasks.produce-message-2.results.Output)"}]'
       taskSpec:
         apiVersion: custom.tekton.dev/v1alpha1
         kind: PipelineLoop
@@ -399,8 +388,6 @@ spec:
                   type: string
                 metadata:
                   labels:
-                    pipelines.kubeflow.org/pipelinename: ''
-                    pipelines.kubeflow.org/generation: ''
                     pipelines.kubeflow.org/cache_enabled: "true"
                   annotations:
                     pipelines.kubeflow.org/component_spec_digest: '{"name": "Consume",
@@ -440,8 +427,6 @@ spec:
                   type: string
                 metadata:
                   labels:
-                    pipelines.kubeflow.org/pipelinename: ''
-                    pipelines.kubeflow.org/generation: ''
                     pipelines.kubeflow.org/cache_enabled: "true"
                   annotations:
                     pipelines.kubeflow.org/component_spec_digest: '{"name": "Consume",
@@ -451,7 +436,5 @@ spec:
           iterateParam: loop-item-param-5
         metadata:
           labels:
-            pipelines.kubeflow.org/pipelinename: ''
-            pipelines.kubeflow.org/generation: ''
             pipelines.kubeflow.org/cache_enabled: "true"
   timeout: 525600m

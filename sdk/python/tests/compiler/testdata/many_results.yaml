@@ -30,12 +30,15 @@ metadata:
     tekton.dev/artifact_endpoint: minio-service.kubeflow:9000
     tekton.dev/artifact_endpoint_scheme: http://
     tekton.dev/artifact_items: '{"print": [], "print4results": [["param1", "/tekton/home/tep-results/param1"],
-      ["param2A", "$(results.param2a.path)"], ["param3_b", "/tekton/home/tep-results/param3-b"],
+      ["param2A", "$(results.param2A.path)"], ["param3_b", "/tekton/home/tep-results/param3-b"],
       ["param4c", "$(results.param4c.path)"]]}'
     sidecar.istio.io/inject: "false"
     pipelines.kubeflow.org/big_data_passing_format: $(workspaces.$TASK_NAME.path)/artifacts/$ORIG_PR_NAME/$TASKRUN_NAME/$TASK_PARAM_NAME
     pipelines.kubeflow.org/pipeline_spec: '{"description": "A pipeline that produce
       many results.", "name": "many-results-pipeline"}'
+  labels:
+    pipelines.kubeflow.org/pipelinename: ''
+    pipelines.kubeflow.org/generation: ''
 spec:
   pipelineSpec:
     tasks:
@@ -46,7 +49,7 @@ spec:
           args:
           - '----output-paths'
           - $(results.param1.path)
-          - /tekton/home/tep-results/param2a
+          - /tekton/home/tep-results/param2A
           - $(results.param3-b.path)
           - /tekton/home/tep-results/param4c
           command:
@@ -102,7 +105,7 @@ spec:
           args:
           - |
             mv /tekton/home/tep-results/param4c $(results.param4c.path);
-            mv /tekton/home/tep-results/param2a $(results.param2a.path);
+            mv /tekton/home/tep-results/param2A $(results.param2A.path);
             mv $(results.param1.path) /tekton/home/tep-results/param1;
             mv $(results.param3-b.path) /tekton/home/tep-results/param3-b;
           command:
@@ -117,19 +120,31 @@ spec:
           - |
             set -exo pipefail
             TOTAL_SIZE=0
-            ARTIFACT_SIZE=`wc -c /tekton/home/tep-results/param1 | awk '{print $1}'`
+            if [ -d /tekton/home/tep-results/param1 ]; then
+              tar -czvf /tekton/home/tep-results/param1.tar.gz /tekton/home/tep-results/param1
+              SUFFIX=".tar.gz"
+            fi
+            ARTIFACT_SIZE=`wc -c /tekton/home/tep-results/param1${SUFFIX} | awk '{print $1}'`
             TOTAL_SIZE=$( expr $TOTAL_SIZE + $ARTIFACT_SIZE)
             touch $(results.param1.path)
             if [[ $TOTAL_SIZE -lt 3072 ]]; then
-              if ! awk "/[^[:print:]]/{f=1} END{exit !f}" /tekton/home/tep-results/param1; then
+              if [ -d /tekton/home/tep-results/param1 ]; then
+                tar -tzf /tekton/home/tep-results/param1.tar.gz > $(results.param1.path)
+              elif ! awk "/[^[:print:]]/{f=1} END{exit !f}" /tekton/home/tep-results/param1; then
                 cp /tekton/home/tep-results/param1 $(results.param1.path)
               fi
             fi
-            ARTIFACT_SIZE=`wc -c /tekton/home/tep-results/param3-b | awk '{print $1}'`
+            if [ -d /tekton/home/tep-results/param3-b ]; then
+              tar -czvf /tekton/home/tep-results/param3-b.tar.gz /tekton/home/tep-results/param3-b
+              SUFFIX=".tar.gz"
+            fi
+            ARTIFACT_SIZE=`wc -c /tekton/home/tep-results/param3-b${SUFFIX} | awk '{print $1}'`
             TOTAL_SIZE=$( expr $TOTAL_SIZE + $ARTIFACT_SIZE)
             touch $(results.param3-b.path)
             if [[ $TOTAL_SIZE -lt 3072 ]]; then
-              if ! awk "/[^[:print:]]/{f=1} END{exit !f}" /tekton/home/tep-results/param3-b; then
+              if [ -d /tekton/home/tep-results/param3-b ]; then
+                tar -tzf /tekton/home/tep-results/param3-b.tar.gz > $(results.param3-b.path)
+              elif ! awk "/[^[:print:]]/{f=1} END{exit !f}" /tekton/home/tep-results/param3-b; then
                 cp /tekton/home/tep-results/param3-b $(results.param3-b.path)
               fi
             fi
@@ -143,7 +158,7 @@ spec:
         - name: param1
           type: string
           description: /tmp/outputs/param1/data
-        - name: param2a
+        - name: param2A
           type: string
           description: /tmp/outputs/param2A/data
         - name: param3-b
@@ -154,8 +169,6 @@ spec:
           description: /tmp/outputs/param4c/data
         metadata:
           labels:
-            pipelines.kubeflow.org/pipelinename: ''
-            pipelines.kubeflow.org/generation: ''
             pipelines.kubeflow.org/cache_enabled: "true"
           annotations:
             tekton-result-sizes: '{"param1": 1500, "param2A": 700, "param3_b": 500,
@@ -184,8 +197,6 @@ spec:
         - name: print4results-param3_b
         metadata:
           labels:
-            pipelines.kubeflow.org/pipelinename: ''
-            pipelines.kubeflow.org/generation: ''
             pipelines.kubeflow.org/cache_enabled: "true"
           annotations:
             pipelines.kubeflow.org/component_spec_digest: '{"name": "print", "outputs":

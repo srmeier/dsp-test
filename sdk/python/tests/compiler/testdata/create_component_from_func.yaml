@@ -33,12 +33,15 @@ metadata:
     tekton.dev/artifact_endpoint: minio-service.kubeflow:9000
     tekton.dev/artifact_endpoint_scheme: http://
     tekton.dev/artifact_items: '{"get-subdirectory": [["Subdir", "$(workspaces.get-subdirectory.path)/artifacts/$ORIG_PR_NAME/$(context.taskRun.name)/Subdir"]],
-      "list-items": [["Items", "$(results.items.path)"]], "list-items-2": [["Items",
-      "$(results.items.path)"]], "produce-dir-with-files-python-op": [["output_dir",
+      "list-items": [["Items", "$(results.Items.path)"]], "list-items-2": [["Items",
+      "$(results.Items.path)"]], "produce-dir-with-files-python-op": [["output_dir",
       "$(workspaces.produce-dir-with-files-python-op.path)/artifacts/$ORIG_PR_NAME/$(context.taskRun.name)/output_dir"]]}'
     sidecar.istio.io/inject: "false"
     pipelines.kubeflow.org/big_data_passing_format: $(workspaces.$TASK_NAME.path)/artifacts/$ORIG_PR_NAME/$TASKRUN_NAME/$TASK_PARAM_NAME
     pipelines.kubeflow.org/pipeline_spec: '{"name": "create-component-from-function"}'
+  labels:
+    pipelines.kubeflow.org/pipelinename: ''
+    pipelines.kubeflow.org/generation: ''
 spec:
   pipelineSpec:
     tasks:
@@ -99,11 +102,17 @@ spec:
           - |
             set -exo pipefail
             TOTAL_SIZE=0
-            ARTIFACT_SIZE=`wc -c $(workspaces.produce-dir-with-files-python-op.path)/artifacts/$ORIG_PR_NAME/$(context.taskRun.name)/output_dir | awk '{print $1}'`
+            if [ -d $(workspaces.produce-dir-with-files-python-op.path)/artifacts/$ORIG_PR_NAME/$(context.taskRun.name)/output_dir ]; then
+              tar -czvf $(workspaces.produce-dir-with-files-python-op.path)/artifacts/$ORIG_PR_NAME/$(context.taskRun.name)/output_dir.tar.gz $(workspaces.produce-dir-with-files-python-op.path)/artifacts/$ORIG_PR_NAME/$(context.taskRun.name)/output_dir
+              SUFFIX=".tar.gz"
+            fi
+            ARTIFACT_SIZE=`wc -c $(workspaces.produce-dir-with-files-python-op.path)/artifacts/$ORIG_PR_NAME/$(context.taskRun.name)/output_dir${SUFFIX} | awk '{print $1}'`
             TOTAL_SIZE=$( expr $TOTAL_SIZE + $ARTIFACT_SIZE)
             touch $(results.output-dir.path)
             if [[ $TOTAL_SIZE -lt 3072 ]]; then
-              if ! awk "/[^[:print:]]/{f=1} END{exit !f}" $(workspaces.produce-dir-with-files-python-op.path)/artifacts/$ORIG_PR_NAME/$(context.taskRun.name)/output_dir; then
+              if [ -d $(workspaces.produce-dir-with-files-python-op.path)/artifacts/$ORIG_PR_NAME/$(context.taskRun.name)/output_dir ]; then
+                tar -tzf $(workspaces.produce-dir-with-files-python-op.path)/artifacts/$ORIG_PR_NAME/$(context.taskRun.name)/output_dir.tar.gz > $(results.output-dir.path)
+              elif ! awk "/[^[:print:]]/{f=1} END{exit !f}" $(workspaces.produce-dir-with-files-python-op.path)/artifacts/$ORIG_PR_NAME/$(context.taskRun.name)/output_dir; then
                 cp $(workspaces.produce-dir-with-files-python-op.path)/artifacts/$ORIG_PR_NAME/$(context.taskRun.name)/output_dir $(results.output-dir.path)
               fi
             fi
@@ -121,8 +130,6 @@ spec:
           type: string
         metadata:
           labels:
-            pipelines.kubeflow.org/pipelinename: ''
-            pipelines.kubeflow.org/generation: ''
             pipelines.kubeflow.org/cache_enabled: "true"
           annotations:
             pipelines.kubeflow.org/component_spec_digest: '{"name": "Produce dir with
@@ -172,12 +179,18 @@ spec:
           - |
             set -exo pipefail
             TOTAL_SIZE=0
-            ARTIFACT_SIZE=`wc -c $(workspaces.get-subdirectory.path)/artifacts/$ORIG_PR_NAME/$(context.taskRun.name)/Subdir | awk '{print $1}'`
+            if [ -d $(workspaces.get-subdirectory.path)/artifacts/$ORIG_PR_NAME/$(context.taskRun.name)/Subdir ]; then
+              tar -czvf $(workspaces.get-subdirectory.path)/artifacts/$ORIG_PR_NAME/$(context.taskRun.name)/Subdir.tar.gz $(workspaces.get-subdirectory.path)/artifacts/$ORIG_PR_NAME/$(context.taskRun.name)/Subdir
+              SUFFIX=".tar.gz"
+            fi
+            ARTIFACT_SIZE=`wc -c $(workspaces.get-subdirectory.path)/artifacts/$ORIG_PR_NAME/$(context.taskRun.name)/Subdir${SUFFIX} | awk '{print $1}'`
             TOTAL_SIZE=$( expr $TOTAL_SIZE + $ARTIFACT_SIZE)
-            touch $(results.subdir.path)
+            touch $(results.Subdir.path)
             if [[ $TOTAL_SIZE -lt 3072 ]]; then
-              if ! awk "/[^[:print:]]/{f=1} END{exit !f}" $(workspaces.get-subdirectory.path)/artifacts/$ORIG_PR_NAME/$(context.taskRun.name)/Subdir; then
-                cp $(workspaces.get-subdirectory.path)/artifacts/$ORIG_PR_NAME/$(context.taskRun.name)/Subdir $(results.subdir.path)
+              if [ -d $(workspaces.get-subdirectory.path)/artifacts/$ORIG_PR_NAME/$(context.taskRun.name)/Subdir ]; then
+                tar -tzf $(workspaces.get-subdirectory.path)/artifacts/$ORIG_PR_NAME/$(context.taskRun.name)/Subdir.tar.gz > $(results.Subdir.path)
+              elif ! awk "/[^[:print:]]/{f=1} END{exit !f}" $(workspaces.get-subdirectory.path)/artifacts/$ORIG_PR_NAME/$(context.taskRun.name)/Subdir; then
+                cp $(workspaces.get-subdirectory.path)/artifacts/$ORIG_PR_NAME/$(context.taskRun.name)/Subdir $(results.Subdir.path)
               fi
             fi
           onError: continue
@@ -189,15 +202,13 @@ spec:
         params:
         - name: produce-dir-with-files-python-op-trname
         results:
-        - name: subdir
+        - name: Subdir
           type: string
           description: /tmp/outputs/Subdir/data
         - name: taskrun-name
           type: string
         metadata:
           labels:
-            pipelines.kubeflow.org/pipelinename: ''
-            pipelines.kubeflow.org/generation: ''
             pipelines.kubeflow.org/cache_enabled: "true"
           annotations:
             pipelines.kubeflow.org/component_spec_digest: '{"name": "Get subdirectory",
@@ -228,7 +239,7 @@ spec:
             #ls --almost-all --recursive "$0" > "$1"
             ls -A -R "$0" > "$1"
           - $(workspaces.list-items.path)/artifacts/$ORIG_PR_NAME/$(params.get-subdirectory-trname)/Subdir
-          - $(results.items.path)
+          - $(results.Items.path)
           image: alpine
           env:
           - name: ORIG_PR_NAME
@@ -238,13 +249,11 @@ spec:
         params:
         - name: get-subdirectory-trname
         results:
-        - name: items
+        - name: Items
           type: string
           description: /tmp/outputs/Items/data
         metadata:
           labels:
-            pipelines.kubeflow.org/pipelinename: ''
-            pipelines.kubeflow.org/generation: ''
             pipelines.kubeflow.org/cache_enabled: "true"
           annotations:
             pipelines.kubeflow.org/component_spec_digest: '{"name": "List items",
@@ -277,7 +286,7 @@ spec:
             ls -A -R "$1" >> "$2"
           - $(workspaces.list-items-2.path)/artifacts/$ORIG_PR_NAME/$(params.get-subdirectory-trname)/Subdir
           - $(workspaces.list-items-2.path)/artifacts/$ORIG_PR_NAME/$(params.produce-dir-with-files-python-op-trname)/output_dir
-          - $(results.items.path)
+          - $(results.Items.path)
           image: alpine
           env:
           - name: ORIG_PR_NAME
@@ -288,13 +297,11 @@ spec:
         - name: get-subdirectory-trname
         - name: produce-dir-with-files-python-op-trname
         results:
-        - name: items
+        - name: Items
           type: string
           description: /tmp/outputs/Items/data
         metadata:
           labels:
-            pipelines.kubeflow.org/pipelinename: ''
-            pipelines.kubeflow.org/generation: ''
             pipelines.kubeflow.org/cache_enabled: "true"
           annotations:
             pipelines.kubeflow.org/component_spec_digest: '{"name": "List items 2",

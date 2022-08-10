@@ -26,12 +26,15 @@ metadata:
     tekton.dev/artifact_endpoint: minio-service.kubeflow:9000
     tekton.dev/artifact_endpoint_scheme: http://
     tekton.dev/artifact_items: '{"any-test": [["status", "$(results.status.path)"]],
-      "flip-coin": [["Output", "$(results.output.path)"]], "sleepcomponent": [], "sleepcomponent-2":
+      "flip-coin": [["Output", "$(results.Output.path)"]], "sleepcomponent": [], "sleepcomponent-2":
       [], "sleepcomponent-3": [], "sleepcomponent-4": []}'
     sidecar.istio.io/inject: "false"
     pipelines.kubeflow.org/big_data_passing_format: $(workspaces.$TASK_NAME.path)/artifacts/$ORIG_PR_NAME/$TASKRUN_NAME/$TASK_PARAM_NAME
     pipelines.kubeflow.org/pipeline_spec: '{"description": "Any Sequencer Component
       Demo", "name": "any-sequencer"}'
+  labels:
+    pipelines.kubeflow.org/pipelinename: ''
+    pipelines.kubeflow.org/generation: ''
 spec:
   pipelineSpec:
     tasks:
@@ -46,8 +49,6 @@ spec:
           image: alpine:latest
         metadata:
           labels:
-            pipelines.kubeflow.org/pipelinename: ''
-            pipelines.kubeflow.org/generation: ''
             pipelines.kubeflow.org/cache_enabled: "true"
           annotations:
             pipelines.kubeflow.org/component_spec_digest: '{"name": "sleepComponent",
@@ -65,8 +66,6 @@ spec:
           image: alpine:latest
         metadata:
           labels:
-            pipelines.kubeflow.org/pipelinename: ''
-            pipelines.kubeflow.org/generation: ''
             pipelines.kubeflow.org/cache_enabled: "true"
           annotations:
             pipelines.kubeflow.org/component_spec_digest: '{"name": "sleepComponent",
@@ -84,8 +83,6 @@ spec:
           image: alpine:latest
         metadata:
           labels:
-            pipelines.kubeflow.org/pipelinename: ''
-            pipelines.kubeflow.org/generation: ''
             pipelines.kubeflow.org/cache_enabled: "true"
           annotations:
             pipelines.kubeflow.org/component_spec_digest: '{"name": "sleepComponent",
@@ -98,7 +95,7 @@ spec:
         - name: main
           args:
           - '----output-paths'
-          - $(results.output.path)
+          - $(results.Output.path)
           command:
           - sh
           - -ec
@@ -145,13 +142,11 @@ spec:
                     f.write(_output_serializers[idx](_outputs[idx]))
           image: python:alpine3.6
         results:
-        - name: output
+        - name: Output
           type: string
           description: /tmp/outputs/Output/data
         metadata:
           labels:
-            pipelines.kubeflow.org/pipelinename: ''
-            pipelines.kubeflow.org/generation: ''
             pipelines.kubeflow.org/cache_enabled: "true"
           annotations:
             pipelines.kubeflow.org/component_spec_digest: '{"name": "Flip coin", "outputs":
@@ -171,8 +166,6 @@ spec:
           image: alpine:latest
         metadata:
           labels:
-            pipelines.kubeflow.org/pipelinename: ''
-            pipelines.kubeflow.org/generation: ''
             pipelines.kubeflow.org/cache_enabled: "true"
           annotations:
             pipelines.kubeflow.org/component_spec_digest: '{"name": "sleepComponent",
@@ -195,7 +188,7 @@ spec:
           - --statusPath
           - $(results.status.path)
           - -c
-          - results_flip-coin_output == 'heads'
+          - results_flip-coin_Output == 'heads'
           command:
           - any-task
           image: dspipelines/any-sequencer:latest
@@ -205,13 +198,11 @@ spec:
           description: /tmp/outputs/status/data
         metadata:
           labels:
-            pipelines.kubeflow.org/pipelinename: ''
-            pipelines.kubeflow.org/generation: ''
             pipelines.kubeflow.org/cache_enabled: "true"
           annotations:
             pipelines.kubeflow.org/component_spec_digest: '{"name": "any_test", "outputs":
               [{"description": "The output file to create the status", "name": "status"}],
-              "version": "any_test@sha256=03b2b97be43cc77f2df70fd915a8fcd2e061341d7904af268cb4b2a4bbd86a76"}'
+              "version": "any_test@sha256=c4aaac826d09733534b96ec4a17c6646fa9d71e55d1e4bece1a5c0d20873e563"}'
             tekton.dev/template: ''
         params:
         - name: pipelineRun-name

@@ -35,9 +35,9 @@ metadata:
     tekton.dev/artifact_endpoint_scheme: http://
     tekton.dev/artifact_items: '{"consume": [], "consume-2": [], "consume-3": [],
       "consume-4": [], "consume-5": [], "consume-6": [], "consume-7": [], "produce-list-of-dicts":
-      [["Output", "$(results.output.path)"]], "produce-list-of-ints": [["Output",
-      "$(results.output.path)"]], "produce-list-of-strings": [["Output", "$(results.output.path)"]],
-      "produce-str": [["Output", "$(results.output.path)"]]}'
+      [["Output", "$(results.Output.path)"]], "produce-list-of-ints": [["Output",
+      "$(results.Output.path)"]], "produce-list-of-strings": [["Output", "$(results.Output.path)"]],
+      "produce-str": [["Output", "$(results.Output.path)"]]}'
     sidecar.istio.io/inject: "false"
     pipelines.kubeflow.org/big_data_passing_format: $(workspaces.$TASK_NAME.path)/artifacts/$ORIG_PR_NAME/$TASKRUN_NAME/$TASK_PARAM_NAME
     pipelines.kubeflow.org/pipeline_spec: '{"name": "parallelfor-item-argument-resolving"}'
@@ -51,8 +51,7 @@ metadata:
       {"annotations": {"pipelines.kubeflow.org/component_spec_digest": "{\"name\":
       \"Consume\", \"outputs\": [], \"version\": \"Consume@sha256=81237bf045292d631ce2f9d982637189181ba23abe552f8bf048b87322d6b5da\"}",
       "tekton.dev/template": ""}, "labels": {"pipelines.kubeflow.org/cache_enabled":
-      "true", "pipelines.kubeflow.org/generation": "", "pipelines.kubeflow.org/pipelinename":
-      ""}}, "params": [{"name": "produce-list-of-strings-Output", "type": "string"}],
+      "true"}}, "params": [{"name": "produce-list-of-strings-Output", "type": "string"}],
       "steps": [{"args": ["--param1", "$(inputs.params.produce-list-of-strings-Output)"],
       "command": ["sh", "-ec", "program_path=$(mktemp)\nprintf \"%s\" \"$0\" > \"$program_path\"\npython3
       -u \"$program_path\" \"$@\"\n", "def consume(param1):\n    print(param1)\n\nimport
@@ -64,8 +63,7 @@ metadata:
       "taskSpec": {"metadata": {"annotations": {"pipelines.kubeflow.org/component_spec_digest":
       "{\"name\": \"Consume\", \"outputs\": [], \"version\": \"Consume@sha256=81237bf045292d631ce2f9d982637189181ba23abe552f8bf048b87322d6b5da\"}",
       "tekton.dev/template": ""}, "labels": {"pipelines.kubeflow.org/cache_enabled":
-      "true", "pipelines.kubeflow.org/generation": "", "pipelines.kubeflow.org/pipelinename":
-      ""}}, "params": [{"name": "produce-list-of-strings-Output-loop-item", "type":
+      "true"}}, "params": [{"name": "produce-list-of-strings-Output-loop-item", "type":
       "string"}], "steps": [{"args": ["--param1", "$(inputs.params.produce-list-of-strings-Output-loop-item)"],
       "command": ["sh", "-ec", "program_path=$(mktemp)\nprintf \"%s\" \"$0\" > \"$program_path\"\npython3
       -u \"$program_path\" \"$@\"\n", "def consume(param1):\n    print(param1)\n\nimport
@@ -77,8 +75,7 @@ metadata:
       "taskSpec": {"metadata": {"annotations": {"pipelines.kubeflow.org/component_spec_digest":
       "{\"name\": \"Consume\", \"outputs\": [], \"version\": \"Consume@sha256=81237bf045292d631ce2f9d982637189181ba23abe552f8bf048b87322d6b5da\"}",
       "tekton.dev/template": ""}, "labels": {"pipelines.kubeflow.org/cache_enabled":
-      "true", "pipelines.kubeflow.org/generation": "", "pipelines.kubeflow.org/pipelinename":
-      ""}}, "params": [{"name": "produce-str-Output", "type": "string"}], "steps":
+      "true"}}, "params": [{"name": "produce-str-Output", "type": "string"}], "steps":
       [{"args": ["--param1", "$(inputs.params.produce-str-Output)"], "command": ["sh",
       "-ec", "program_path=$(mktemp)\nprintf \"%s\" \"$0\" > \"$program_path\"\npython3
       -u \"$program_path\" \"$@\"\n", "def consume(param1):\n    print(param1)\n\nimport
@@ -94,8 +91,7 @@ metadata:
       "taskSpec": {"metadata": {"annotations": {"pipelines.kubeflow.org/component_spec_digest":
       "{\"name\": \"Consume\", \"outputs\": [], \"version\": \"Consume@sha256=81237bf045292d631ce2f9d982637189181ba23abe552f8bf048b87322d6b5da\"}",
       "tekton.dev/template": ""}, "labels": {"pipelines.kubeflow.org/cache_enabled":
-      "true", "pipelines.kubeflow.org/generation": "", "pipelines.kubeflow.org/pipelinename":
-      ""}}, "params": [{"name": "produce-list-of-ints-Output", "type": "string"}],
+      "true"}}, "params": [{"name": "produce-list-of-ints-Output", "type": "string"}],
       "steps": [{"args": ["--param1", "$(inputs.params.produce-list-of-ints-Output)"],
       "command": ["sh", "-ec", "program_path=$(mktemp)\nprintf \"%s\" \"$0\" > \"$program_path\"\npython3
       -u \"$program_path\" \"$@\"\n", "def consume(param1):\n    print(param1)\n\nimport
@@ -107,9 +103,8 @@ metadata:
       "taskSpec": {"metadata": {"annotations": {"pipelines.kubeflow.org/component_spec_digest":
       "{\"name\": \"Consume\", \"outputs\": [], \"version\": \"Consume@sha256=81237bf045292d631ce2f9d982637189181ba23abe552f8bf048b87322d6b5da\"}",
       "tekton.dev/template": ""}, "labels": {"pipelines.kubeflow.org/cache_enabled":
-      "true", "pipelines.kubeflow.org/generation": "", "pipelines.kubeflow.org/pipelinename":
-      ""}}, "params": [{"name": "produce-list-of-ints-Output-loop-item", "type": "string"}],
-      "steps": [{"args": ["--param1", "$(inputs.params.produce-list-of-ints-Output-loop-item)"],
+      "true"}}, "params": [{"name": "produce-list-of-ints-Output-loop-item", "type":
+      "string"}], "steps": [{"args": ["--param1", "$(inputs.params.produce-list-of-ints-Output-loop-item)"],
       "command": ["sh", "-ec", "program_path=$(mktemp)\nprintf \"%s\" \"$0\" > \"$program_path\"\npython3
       -u \"$program_path\" \"$@\"\n", "def consume(param1):\n    print(param1)\n\nimport
       argparse\n_parser = argparse.ArgumentParser(prog=''Consume'', description='''')\n_parser.add_argument(\"--param1\",
@@ -125,8 +120,7 @@ metadata:
       {"pipelines.kubeflow.org/component_spec_digest": "{\"name\": \"Consume\", \"outputs\":
       [], \"version\": \"Consume@sha256=81237bf045292d631ce2f9d982637189181ba23abe552f8bf048b87322d6b5da\"}",
       "tekton.dev/template": ""}, "labels": {"pipelines.kubeflow.org/cache_enabled":
-      "true", "pipelines.kubeflow.org/generation": "", "pipelines.kubeflow.org/pipelinename":
-      ""}}, "params": [{"name": "produce-list-of-dicts-Output", "type": "string"}],
+      "true"}}, "params": [{"name": "produce-list-of-dicts-Output", "type": "string"}],
       "steps": [{"args": ["--param1", "$(inputs.params.produce-list-of-dicts-Output)"],
       "command": ["sh", "-ec", "program_path=$(mktemp)\nprintf \"%s\" \"$0\" > \"$program_path\"\npython3
       -u \"$program_path\" \"$@\"\n", "def consume(param1):\n    print(param1)\n\nimport
@@ -139,8 +133,7 @@ metadata:
       {"metadata": {"annotations": {"pipelines.kubeflow.org/component_spec_digest":
       "{\"name\": \"Consume\", \"outputs\": [], \"version\": \"Consume@sha256=81237bf045292d631ce2f9d982637189181ba23abe552f8bf048b87322d6b5da\"}",
       "tekton.dev/template": ""}, "labels": {"pipelines.kubeflow.org/cache_enabled":
-      "true", "pipelines.kubeflow.org/generation": "", "pipelines.kubeflow.org/pipelinename":
-      ""}}, "params": [{"name": "produce-list-of-dicts-Output-loop-item-subvar-aaa",
+      "true"}}, "params": [{"name": "produce-list-of-dicts-Output-loop-item-subvar-aaa",
       "type": "string"}], "steps": [{"args": ["--param1", "$(inputs.params.produce-list-of-dicts-Output-loop-item-subvar-aaa)"],
       "command": ["sh", "-ec", "program_path=$(mktemp)\nprintf \"%s\" \"$0\" > \"$program_path\"\npython3
       -u \"$program_path\" \"$@\"\n", "def consume(param1):\n    print(param1)\n\nimport
@@ -148,6 +141,9 @@ metadata:
       dest=\"param1\", type=str, required=True, default=argparse.SUPPRESS)\n_parsed_args
       = vars(_parser.parse_args())\n\n_outputs = consume(**_parsed_args)\n"], "image":
       "python:3.7", "name": "main"}]}, "timeout": "525600m"}]}}}]'
+  labels:
+    pipelines.kubeflow.org/pipelinename: ''
+    pipelines.kubeflow.org/generation: ''
 spec:
   pipelineSpec:
     tasks:
@@ -157,7 +153,7 @@ spec:
         - name: main
           args:
           - '----output-paths'
-          - $(results.output.path)
+          - $(results.Output.path)
           command:
           - sh
           - -ec
@@ -200,13 +196,11 @@ spec:
                     f.write(_output_serializers[idx](_outputs[idx]))
           image: python:3.7
         results:
-        - name: output
+        - name: Output
           type: string
           description: /tmp/outputs/Output/data
         metadata:
           labels:
-            pipelines.kubeflow.org/pipelinename: ''
-            pipelines.kubeflow.org/generation: ''
             pipelines.kubeflow.org/cache_enabled: "true"
           annotations:
             pipelines.kubeflow.org/component_spec_digest: '{"name": "Produce str",
@@ -220,7 +214,7 @@ spec:
         - name: main
           args:
           - '----output-paths'
-          - $(results.output.path)
+          - $(results.Output.path)
           command:
           - sh
           - -ec
@@ -272,13 +266,11 @@ spec:
                     f.write(_output_serializers[idx](_outputs[idx]))
           image: python:3.7
         results:
-        - name: output
+        - name: Output
           type: string
           description: /tmp/outputs/Output/data
         metadata:
           labels:
-            pipelines.kubeflow.org/pipelinename: ''
-            pipelines.kubeflow.org/generation: ''
             pipelines.kubeflow.org/cache_enabled: "true"
           annotations:
             pipelines.kubeflow.org/component_spec_digest: '{"name": "Produce list
@@ -292,7 +284,7 @@ spec:
         - name: main
           args:
           - '----output-paths'
-          - $(results.output.path)
+          - $(results.Output.path)
           command:
           - sh
           - -ec
@@ -344,13 +336,11 @@ spec:
                     f.write(_output_serializers[idx](_outputs[idx]))
           image: python:3.7
         results:
-        - name: output
+        - name: Output
           type: string
           description: /tmp/outputs/Output/data
         metadata:
           labels:
-            pipelines.kubeflow.org/pipelinename: ''
-            pipelines.kubeflow.org/generation: ''
             pipelines.kubeflow.org/cache_enabled: "true"
           annotations:
             pipelines.kubeflow.org/component_spec_digest: '{"name": "Produce list
@@ -364,7 +354,7 @@ spec:
         - name: main
           args:
           - '----output-paths'
-          - $(results.output.path)
+          - $(results.Output.path)
           command:
           - sh
           - -ec
@@ -416,13 +406,11 @@ spec:
                     f.write(_output_serializers[idx](_outputs[idx]))
           image: python:3.7
         results:
-        - name: output
+        - name: Output
           type: string
           description: /tmp/outputs/Output/data
         metadata:
           labels:
-            pipelines.kubeflow.org/pipelinename: ''
-            pipelines.kubeflow.org/generation: ''
             pipelines.kubeflow.org/cache_enabled: "true"
           annotations:
             pipelines.kubeflow.org/component_spec_digest: '{"name": "Produce list
@@ -440,11 +428,11 @@ spec:
         name: parallelfor-item-argument-resolving-for-loop-1
       params:
       - name: produce-list-of-strings-Output
-        value: $(tasks.produce-list-of-strings.results.output)
+        value: $(tasks.produce-list-of-strings.results.Output)
       - name: produce-list-of-strings-Output-loop-item
-        value: $(tasks.produce-list-of-strings.results.output)
+        value: $(tasks.produce-list-of-strings.results.Output)
       - name: produce-str-Output
-        value: $(tasks.produce-str.results.output)
+        value: $(tasks.produce-str.results.Output)
     - runAfter:
       - produce-list-of-ints
       name: parallelfor-item-argument-resolving-for-loop-2
@@ -454,9 +442,9 @@ spec:
         name: parallelfor-item-argument-resolving-for-loop-2
       params:
       - name: produce-list-of-ints-Output
-        value: $(tasks.produce-list-of-ints.results.output)
+        value: $(tasks.produce-list-of-ints.results.Output)
       - name: produce-list-of-ints-Output-loop-item
-        value: $(tasks.produce-list-of-ints.results.output)
+        value: $(tasks.produce-list-of-ints.results.Output)
     - runAfter:
       - produce-list-of-dicts
       name: parallelfor-item-argument-resolving-for-loop-3
@@ -466,7 +454,7 @@ spec:
         name: parallelfor-item-argument-resolving-for-loop-3
       params:
       - name: produce-list-of-dicts-Output
-        value: $(tasks.produce-list-of-dicts.results.output)
+        value: $(tasks.produce-list-of-dicts.results.Output)
       - name: produce-list-of-dicts-Output-loop-item
-        value: $(tasks.produce-list-of-dicts.results.output)
+        value: $(tasks.produce-list-of-dicts.results.Output)
   timeout: 525600m

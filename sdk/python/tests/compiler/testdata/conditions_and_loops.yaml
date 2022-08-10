@@ -27,14 +27,17 @@ metadata:
     tekton.dev/artifact_bucket: mlpipeline
     tekton.dev/artifact_endpoint: minio-service.kubeflow:9000
     tekton.dev/artifact_endpoint_scheme: http://
-    tekton.dev/artifact_items: '{"add-numbers": [["Output", "$(results.output.path)"]],
-      "notify-failure": [], "notify-success": [], "print-number": [["Output", "$(results.output.path)"]],
-      "produce-numbers": [["Output", "$(results.output.path)"]]}'
+    tekton.dev/artifact_items: '{"add-numbers": [["Output", "$(results.Output.path)"]],
+      "notify-failure": [], "notify-success": [], "print-number": [["Output", "$(results.Output.path)"]],
+      "produce-numbers": [["Output", "$(results.Output.path)"]]}'
     sidecar.istio.io/inject: "false"
     pipelines.kubeflow.org/big_data_passing_format: $(workspaces.$TASK_NAME.path)/artifacts/$ORIG_PR_NAME/$TASKRUN_NAME/$TASK_PARAM_NAME
     pipelines.kubeflow.org/pipeline_spec: '{"inputs": [{"default": "3", "name": "n",
       "optional": true, "type": "Integer"}, {"default": "20", "name": "threshold",
       "optional": true, "type": "Integer"}], "name": "conditions-and-loops"}'
+  labels:
+    pipelines.kubeflow.org/pipelinename: ''
+    pipelines.kubeflow.org/generation: ''
 spec:
   params:
   - name: "n"
@@ -59,7 +62,7 @@ spec:
           - --n
           - $(inputs.params.n)
           - '----output-paths'
-          - $(results.output.path)
+          - $(results.Output.path)
           command:
           - sh
           - -ec
@@ -117,13 +120,11 @@ spec:
         params:
         - name: "n"
         results:
-        - name: output
+        - name: Output
           type: string
           description: /tmp/outputs/Output/data
         metadata:
           labels:
-            pipelines.kubeflow.org/pipelinename: ''
-            pipelines.kubeflow.org/generation: ''
             pipelines.kubeflow.org/cache_enabled: "true"
           annotations:
             pipelines.kubeflow.org/component_spec_digest: '{"name": "Produce numbers",
@@ -136,7 +137,7 @@ spec:
       name: conditions-and-loops-for-loop-1
       params:
       - name: produce-numbers-Output-loop-item
-        value: $(tasks.produce-numbers.results.output)
+        value: $(tasks.produce-numbers.results.Output)
       - name: threshold
         value: $(params.threshold)
       taskSpec:
@@ -163,7 +164,7 @@ spec:
                   - --b
                   - '10'
                   - '----output-paths'
-                  - $(results.output.path)
+                  - $(results.Output.path)
                   command:
                   - sh
                   - -ec
@@ -214,13 +215,11 @@ spec:
                 - name: produce-numbers-Output-loop-item
                   type: string
                 results:
-                - name: output
+                - name: Output
                   type: string
                   description: /tmp/outputs/Output/data
                 metadata:
                   labels:
-                    pipelines.kubeflow.org/pipelinename: ''
-                    pipelines.kubeflow.org/generation: ''
                     pipelines.kubeflow.org/cache_enabled: "true"
                   annotations:
                     pipelines.kubeflow.org/component_spec_digest: '{"name": "Add numbers",
@@ -231,7 +230,7 @@ spec:
             - name: print-number
               params:
               - name: add-numbers-Output
-                value: $(tasks.add-numbers.results.output)
+                value: $(tasks.add-numbers.results.Output)
               taskSpec:
                 steps:
                 - name: main
@@ -239,7 +238,7 @@ spec:
                   - --a
                   - $(inputs.params.add-numbers-Output)
                   - '----output-paths'
-                  - $(results.output.path)
+                  - $(results.Output.path)
                   command:
                   - sh
                   - -ec
@@ -289,13 +288,11 @@ spec:
                 - name: add-numbers-Output
                   type: string
                 results:
-                - name: output
+                - name: Output
                   type: string
                   description: /tmp/outputs/Output/data
                 metadata:
                   labels:
-                    pipelines.kubeflow.org/pipelinename: ''
-                    pipelines.kubeflow.org/generation: ''
                     pipelines.kubeflow.org/cache_enabled: "true"
                   annotations:
                     pipelines.kubeflow.org/component_spec_digest: '{"name": "Print
@@ -326,8 +323,6 @@ spec:
                   image: python:3.7
                 metadata:
                   labels:
-                    pipelines.kubeflow.org/pipelinename: ''
-                    pipelines.kubeflow.org/generation: ''
                     pipelines.kubeflow.org/cache_enabled: "true"
                   annotations:
                     pipelines.kubeflow.org/component_spec_digest: '{"name": "Notify
@@ -362,8 +357,6 @@ spec:
                   image: python:3.7
                 metadata:
                   labels:
-                    pipelines.kubeflow.org/pipelinename: ''
-                    pipelines.kubeflow.org/generation: ''
                     pipelines.kubeflow.org/cache_enabled: "true"
                   annotations:
                     pipelines.kubeflow.org/component_spec_digest: '{"name": "Notify
@@ -378,7 +371,7 @@ spec:
             - name: condition-2
               params:
               - name: operand1
-                value: $(tasks.print-number.results.output)
+                value: $(tasks.print-number.results.Output)
               - name: operand2
                 value: $(params.threshold)
               - name: operator
@@ -421,13 +414,11 @@ spec:
                   image: python:alpine3.6
                 metadata:
                   labels:
-                    pipelines.kubeflow.org/pipelinename: ''
-                    pipelines.kubeflow.org/generation: ''
                     pipelines.kubeflow.org/cache_enabled: "true"
             - name: condition-3
               params:
               - name: operand1
-                value: $(tasks.print-number.results.output)
+                value: $(tasks.print-number.results.Output)
               - name: operand2
                 value: $(params.threshold)
               - name: operator
@@ -470,13 +461,9 @@ spec:
                   image: python:alpine3.6
                 metadata:
                   labels:
-                    pipelines.kubeflow.org/pipelinename: ''
-                    pipelines.kubeflow.org/generation: ''
                     pipelines.kubeflow.org/cache_enabled: "true"
           iterateParam: produce-numbers-Output-loop-item
         metadata:
           labels:
-            pipelines.kubeflow.org/pipelinename: ''
-            pipelines.kubeflow.org/generation: ''
             pipelines.kubeflow.org/cache_enabled: "true"
   timeout: 525600m

@@ -26,14 +26,17 @@ metadata:
     tekton.dev/artifact_bucket: mlpipeline
     tekton.dev/artifact_endpoint: minio-service.kubeflow:9000
     tekton.dev/artifact_endpoint_scheme: http://
-    tekton.dev/artifact_items: '{"add-numbers": [["Output", "$(results.output.path)"]],
-      "notify-failure": [], "notify-success": [], "print-number": [["Output", "$(results.output.path)"]]}'
+    tekton.dev/artifact_items: '{"add-numbers": [["Output", "$(results.Output.path)"]],
+      "notify-failure": [], "notify-success": [], "print-number": [["Output", "$(results.Output.path)"]]}'
     sidecar.istio.io/inject: "false"
     pipelines.kubeflow.org/big_data_passing_format: $(workspaces.$TASK_NAME.path)/artifacts/$ORIG_PR_NAME/$TASKRUN_NAME/$TASK_PARAM_NAME
     pipelines.kubeflow.org/pipeline_spec: '{"inputs": [{"default": "5", "name": "n",
       "optional": true, "type": "Integer"}, {"default": "10", "name": "threshold",
       "optional": true, "type": "Integer"}, {"default": "15", "name": "lower_bound",
       "optional": true, "type": "Integer"}], "name": "conditions-with-global-params"}'
+  labels:
+    pipelines.kubeflow.org/pipelinename: ''
+    pipelines.kubeflow.org/generation: ''
 spec:
   params:
   - name: lower_bound
@@ -66,7 +69,7 @@ spec:
           - --b
           - $(inputs.params.lower_bound)
           - '----output-paths'
-          - $(results.output.path)
+          - $(results.Output.path)
           command:
           - sh
           - -ec
@@ -117,13 +120,11 @@ spec:
         - name: lower_bound
         - name: "n"
         results:
-        - name: output
+        - name: Output
           type: string
           description: /tmp/outputs/Output/data
         metadata:
           labels:
-            pipelines.kubeflow.org/pipelinename: ''
-            pipelines.kubeflow.org/generation: ''
             pipelines.kubeflow.org/cache_enabled: "true"
           annotations:
             pipelines.kubeflow.org/component_spec_digest: '{"name": "Add numbers",
@@ -134,7 +135,7 @@ spec:
     - name: print-number
       params:
       - name: add-numbers-Output
-        value: $(tasks.add-numbers.results.output)
+        value: $(tasks.add-numbers.results.Output)
       taskSpec:
         steps:
         - name: main
@@ -142,7 +143,7 @@ spec:
           - --a
           - $(inputs.params.add-numbers-Output)
           - '----output-paths'
-          - $(results.output.path)
+          - $(results.Output.path)
           command:
           - sh
           - -ec
@@ -191,13 +192,11 @@ spec:
         params:
         - name: add-numbers-Output
         results:
-        - name: output
+        - name: Output
           type: string
           description: /tmp/outputs/Output/data
         metadata:
           labels:
-            pipelines.kubeflow.org/pipelinename: ''
-            pipelines.kubeflow.org/generation: ''
             pipelines.kubeflow.org/cache_enabled: "true"
           annotations:
             pipelines.kubeflow.org/component_spec_digest: '{"name": "Print number",
@@ -228,8 +227,6 @@ spec:
           image: python:3.7
         metadata:
           labels:
-            pipelines.kubeflow.org/pipelinename: ''
-            pipelines.kubeflow.org/generation: ''
             pipelines.kubeflow.org/cache_enabled: "true"
           annotations:
             pipelines.kubeflow.org/component_spec_digest: '{"name": "Notify success",
@@ -264,8 +261,6 @@ spec:
           image: python:3.7
         metadata:
           labels:
-            pipelines.kubeflow.org/pipelinename: ''
-            pipelines.kubeflow.org/generation: ''
             pipelines.kubeflow.org/cache_enabled: "true"
           annotations:
             pipelines.kubeflow.org/component_spec_digest: '{"name": "Notify failure",
@@ -280,7 +275,7 @@ spec:
     - name: condition-1
       params:
       - name: operand1
-        value: $(tasks.print-number.results.output)
+        value: $(tasks.print-number.results.Output)
       - name: operand2
         value: $(params.threshold)
       - name: operator
@@ -321,7 +316,7 @@ spec:
     - name: condition-2
       params:
       - name: operand1
-        value: $(tasks.print-number.results.output)
+        value: $(tasks.print-number.results.Output)
       - name: operand2
         value: $(params.threshold)
       - name: operator
