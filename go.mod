@@ -9,16 +9,16 @@ require (
 	github.com/fsnotify/fsnotify v1.5.1
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
 	github.com/go-ini/ini v1.62.0 // indirect
-	github.com/go-openapi/errors v0.19.9
-	github.com/go-openapi/runtime v0.19.24
-	github.com/go-openapi/strfmt v0.19.11
+	github.com/go-openapi/errors v0.20.2
+	github.com/go-openapi/runtime v0.21.1
+	github.com/go-openapi/strfmt v0.21.1
 	github.com/go-openapi/swag v0.19.15
-	github.com/go-openapi/validate v0.20.1
+	github.com/go-openapi/validate v0.20.3
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/golang/glog v1.0.0
 	github.com/golang/protobuf v1.5.2
 	github.com/google/addlicense v0.0.0-20200906110928-a0294312aa76
-	github.com/google/go-cmp v0.5.7
+	github.com/google/go-cmp v0.5.8
 	github.com/google/uuid v1.3.0
 	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
 	github.com/gorilla/mux v1.8.0
@@ -30,15 +30,15 @@ require (
 	github.com/minio/minio-go v6.0.14+incompatible
 	github.com/peterhellberg/duration v0.0.0-20191119133758-ec6baeebcd10
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.11.1
+	github.com/prometheus/client_golang v1.12.1
 	github.com/robfig/cron v1.2.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/smartystreets/assertions v0.0.0-20190401211740-f487f9de1cd3 // indirect
 	github.com/spf13/viper v1.10.0
 	github.com/stretchr/testify v1.7.0
-	github.com/tektoncd/pipeline v0.36.0
+	github.com/tektoncd/pipeline v0.38.3
 	github.com/tidwall/pretty v1.1.0 // indirect
-	go.uber.org/zap v1.19.1
+	go.uber.org/zap v1.21.0
 	golang.org/x/net v0.0.0-20220225172249-27dd8689420f
 	google.golang.org/genproto v0.0.0-20220303160752-862486edd9cc
 	google.golang.org/grpc v1.44.0
@@ -54,7 +54,9 @@ require (
 replace (
 	github.com/mattn/go-sqlite3 => github.com/mattn/go-sqlite3 v1.9.0
 	github.com/prometheus/common => github.com/prometheus/common v0.26.0
+	go.mongodb.org/mongo-driver => go.mongodb.org/mongo-driver v1.4.4
 	go.opencensus.io => go.opencensus.io v0.22.5
+	gopkg.in/yaml.v3 => gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 )
 
 go 1.13
