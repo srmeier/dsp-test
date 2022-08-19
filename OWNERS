@@ -1,17 +1,11 @@
+# Each list is sorted alphabetically, additions should maintain that order
 approvers:
- - animeshsingh
- - ckadner
- - Tomcli
- - fenglixa
- - pugangxa
- - scrapcodes
- - yhwang
+- anishasthana
+- gmfrasca
+- rimolive
+
 reviewers:
- - animeshsingh
- - ckadner
- - Tomcli
- - fenglixa
- - pugangxa
- - jinchihe
- - scrapcodes
- - yhwang
+- anishasthana
+- gmfrasca
+- rimolive
+- DharmitD
