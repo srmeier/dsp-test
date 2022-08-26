@@ -28,7 +28,7 @@ spec:
               valueFrom:
                 configMapKeyRef:
                   key: cronScheduleTimezone
-                  name: pipeline-install-config
+                  name: $(pipeline_install_configuration)
           image: scheduledworkflow
           imagePullPolicy: IfNotPresent
           name: ml-pipeline-scheduledworkflow

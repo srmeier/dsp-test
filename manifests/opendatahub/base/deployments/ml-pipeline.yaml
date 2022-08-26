@@ -31,94 +31,94 @@ spec:
               valueFrom:
                 secretKeyRef:
                   key: username
-                  name: mysql-secret
+                  name: $(database_secret)
             - name: DBCONFIG_PASSWORD
               valueFrom:
                 secretKeyRef:
                   key: password
-                  name: mysql-secret
+                  name: $(database_secret)
             - name: DBCONFIG_DBNAME
               valueFrom:
                 configMapKeyRef:
                   key: pipelineDb
-                  name: pipeline-install-config
+                  name: $(pipeline_install_configuration)
             - name: DBCONFIG_HOST
               valueFrom:
                 configMapKeyRef:
                   key: dbHost
-                  name: pipeline-install-config
+                  name: $(pipeline_install_configuration)
             - name: DBCONFIG_PORT
               valueFrom:
                 configMapKeyRef:
                   key: dbPort
-                  name: pipeline-install-config
+                  name: $(pipeline_install_configuration)
             - name: PIPELINE_RUNTIME
               value: tekton
             - name: ARTIFACT_BUCKET
               valueFrom:
                 configMapKeyRef:
                   key: artifact_bucket
-                  name: kfp-tekton-config
+                  name: $(ml_pipelines_configuration)
             - name: ARTIFACT_ENDPOINT
               valueFrom:
                 configMapKeyRef:
                   key: artifact_endpoint
-                  name: kfp-tekton-config
+                  name: $(ml_pipelines_configuration)
             - name: ARTIFACT_ENDPOINT_SCHEME
               valueFrom:
                 configMapKeyRef:
                   key: artifact_endpoint_scheme
-                  name: kfp-tekton-config
+                  name: $(ml_pipelines_configuration)
             - name: ARCHIVE_LOGS
               valueFrom:
                 configMapKeyRef:
                   key: archive_logs
-                  name: kfp-tekton-config
+                  name: $(ml_pipelines_configuration)
             - name: TRACK_ARTIFACTS
               valueFrom:
                 configMapKeyRef:
                   key: track_artifacts
-                  name: kfp-tekton-config
+                  name: $(ml_pipelines_configuration)
             - name: STRIP_EOF
               valueFrom:
                 configMapKeyRef:
                   key: strip_eof
-                  name: kfp-tekton-config
+                  name: $(ml_pipelines_configuration)
             - name: ARTIFACT_SCRIPT
               valueFrom:
                 configMapKeyRef:
                   key: artifact_script
-                  name: kfp-tekton-config
+                  name: $(ml_pipelines_configuration)
             - name: ARTIFACT_IMAGE
               valueFrom:
                 configMapKeyRef:
                   key: artifact_image
-                  name: kfp-tekton-config
+                  name: $(ml_pipelines_configuration)
             - name: INJECT_DEFAULT_SCRIPT
               valueFrom:
                 configMapKeyRef:
                   key: inject_default_script
-                  name: kfp-tekton-config
+                  name: $(ml_pipelines_configuration)
             - name: APPLY_TEKTON_CUSTOM_RESOURCE
               valueFrom:
                 configMapKeyRef:
                   key: apply_tekton_custom_resource
-                  name: kfp-tekton-config
+                  name: $(ml_pipelines_configuration)
             - name: TERMINATE_STATUS
               valueFrom:
                 configMapKeyRef:
                   key: terminate_status
-                  name: kfp-tekton-config
+                  name: $(ml_pipelines_configuration)
             - name: AUTO_UPDATE_PIPELINE_DEFAULT_VERSION
               valueFrom:
                 configMapKeyRef:
                   key: autoUpdatePipelineDefaultVersion
-                  name: pipeline-install-config
+                  name: $(pipeline_install_configuration)
             - name: DBCONFIG_CONMAXLIFETIMESEC
               valueFrom:
                 configMapKeyRef:
                   key: ConMaxLifeTimeSec
-                  name: pipeline-install-config
+                  name: $(pipeline_install_configuration)
           image: api-server
           imagePullPolicy: Always
           livenessProbe:

@@ -33,27 +33,27 @@ spec:
               valueFrom:
                 secretKeyRef:
                   key: username
-                  name: mysql-secret
+                  name: $(database_secret)
             - name: DBCONFIG_PASSWORD
               valueFrom:
                 secretKeyRef:
                   key: password
-                  name: mysql-secret
+                  name: $(database_secret)
             - name: MYSQL_DATABASE
               valueFrom:
                 configMapKeyRef:
                   key: mlmdDb
-                  name: pipeline-install-config
+                  name: $(pipeline_install_configuration)
             - name: MYSQL_HOST
               valueFrom:
                 configMapKeyRef:
                   key: dbHost
-                  name: pipeline-install-config
+                  name: $(pipeline_install_configuration)
             - name: MYSQL_PORT
               valueFrom:
                 configMapKeyRef:
                   key: dbPort
-                  name: pipeline-install-config
+                  name: $(pipeline_install_configuration)
           image: metadata-grpc
           livenessProbe:
             initialDelaySeconds: 3

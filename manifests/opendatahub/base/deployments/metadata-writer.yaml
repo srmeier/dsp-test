@@ -29,7 +29,7 @@ spec:
               valueFrom:
                 configMapKeyRef:
                   key: archive_logs
-                  name: kfp-tekton-config
+                  name: $(ml_pipelines_configuration)
           image: metadata-writer
           name: main
       serviceAccountName: kubeflow-pipelines-metadata-writer

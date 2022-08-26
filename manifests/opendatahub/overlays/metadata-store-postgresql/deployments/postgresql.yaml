@@ -26,12 +26,12 @@ spec:
               valueFrom:
                 secretKeyRef:
                   key: username
-                  name: postgresql-secret
+                  name: $(database_secret)
             - name: POSTGRESQL_PASSWORD
               valueFrom:
                 secretKeyRef:
                   key: password
-                  name: postgresql-secret
+                  name: $(database_secret)
             - name: POSTGRESQL_DATABASE
               value: kfp-tekton
           imagePullPolicy: Always
