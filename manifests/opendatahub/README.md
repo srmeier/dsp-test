@@ -46,6 +46,15 @@ This directory contains artifacts for deploying all backend components of ML Pip
 
 This directory contains the service monitor definition for ML Pipelines. It is always deployed by base, so this will eventually be moved into the base directory itself.
 
+## Parameters
+
+You can customize the ML Pipelines deployment by injecting custom parameters to change the default deployment. The following parameters can be used:
+
+* **pipeline_install_configuration**: The ConfigMap name that contains the values to install the ML Pipelines environment. This parameter defaults to `pipeline-install-config` and you can find an example in the [repository](./base/configmaps/pipeline-install-config.yaml).
+* **ml_pipelines_configuration**: The ConfigMap name that contains the values to integrate ML Pipelines with the underlying components (Database and Object Store). This parameter defaults to `kfp-tekton-config` and you can find an example in the [repository](./base/configmaps/kfp-tekton-config.yaml).
+* **database_secret**: The secret that contains the credentials for the ML Pipelines Databse. It defaults to `mysql-secret` if using the `metadata-store-mysql` overlay or `postgresql-secret` if using the `metadata-store-postgresql` overlay.
+* **ml_pipelines_ui_configuration**: The ConfigMap that contains the values to customize UI. It defaults to `ml-pipeline-ui-configmap`.
+
 ## Configuration
 
 * It is possible to configure what S3 storage is being used by Pipeline Runs. Detailed instructions on how to configure this will be added once Minio is moved to an overlay.

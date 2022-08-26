@@ -73,6 +73,34 @@ vars:
       apiVersion: v1
     fieldref:
       fieldpath: data.artifact_secret_name
+  - name: pipeline_install_configuration
+    objref:
+      name: kfp-tekton-params-config
+      kind: ConfigMap
+      apiVersion: v1
+    fieldref:
+      fieldpath: data.pipeline_install_configuration
+  - name: ml_pipelines_configuration
+    objref:
+      name: kfp-tekton-params-config
+      kind: ConfigMap
+      apiVersion: v1
+    fieldref:
+      fieldpath: data.ml_pipelines_configuration
+  - name: database_secret
+    objref:
+      name: kfp-tekton-params-config
+      kind: ConfigMap
+      apiVersion: v1
+    fieldref:
+      fieldpath: data.database_secret
+  - name: ml_pipelines_ui_configuration
+    objref:
+      name: kfp-tekton-params-config
+      kind: ConfigMap
+      apiVersion: v1
+    fieldref:
+      fieldpath: data.ml_pipelines_ui_configuration
 configurations:
   - params.yaml
 

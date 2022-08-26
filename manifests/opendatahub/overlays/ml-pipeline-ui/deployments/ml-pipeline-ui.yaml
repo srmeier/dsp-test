@@ -126,7 +126,7 @@ spec:
       serviceAccountName: ml-pipeline-ui
       volumes:
         - configMap:
-            name: ml-pipeline-ui-configmap
+            name: $(ml_pipelines_ui_configuration)
           name: config-volume
         - name: proxy-tls
           secret:
