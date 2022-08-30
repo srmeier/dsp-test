@@ -54,8 +54,12 @@ DEFAULT_ARTIFACT_ENDPOINT_SCHEME = env.get('DEFAULT_ARTIFACT_ENDPOINT_SCHEME', '
 TEKTON_GLOBAL_DEFAULT_TIMEOUT = strtobool(env.get('TEKTON_GLOBAL_DEFAULT_TIMEOUT', 'false'))
 # DISABLE_CEL_CONDITION should be True until CEL is officially merged into Tekton main API.
 DISABLE_CEL_CONDITION = True
-# Default timeout is one year
+# Default tasks timeout is one year
 DEFAULT_TIMEOUT_MINUTES = "525600m"
+# Default whole pipeline timeout is two year
+DEFAULT_TIMEOUT_WITH_FINALLY_MINUTES = "1051200m"
+# Default finally extension is 5 minutes
+DEFAULT_FINALLY_SECONDS = 300
 
 
 def _get_super_condition_template():
@@ -153,6 +157,7 @@ class TektonCompiler(Compiler):
     self.pipeline_labels['pipelines.kubeflow.org/pipelinename'] = ''
     self.pipeline_labels['pipelines.kubeflow.org/generation'] = ''
     self.pipeline_annotations = tekton_pipeline_conf.pipeline_annotations
+    self.pipeline_annotations['tekton.dev/template'] = ''
     self.tekton_inline_spec = tekton_pipeline_conf.tekton_inline_spec
     self.resource_in_separate_yaml = tekton_pipeline_conf.resource_in_separate_yaml
     self.security_context = tekton_pipeline_conf.security_context
@@ -1068,9 +1073,7 @@ class TektonCompiler(Compiler):
           task_labels = template['metadata'].get('labels', {})
           cache_default = self.pipeline_labels.get('pipelines.kubeflow.org/cache_enabled', 'true')
           task_labels['pipelines.kubeflow.org/cache_enabled'] = task_labels.get('pipelines.kubeflow.org/cache_enabled', cache_default)
-
           task_annotations = template['metadata'].get('annotations', {})
-          task_annotations['tekton.dev/template'] = task_annotations.get('tekton.dev/template', '')
 
           # Updata default metadata at the end.
           task_ref['taskSpec']['metadata']['labels'] = task_labels
@@ -1330,6 +1333,11 @@ class TektonCompiler(Compiler):
       }
     }
 
+    if env.get('DISABLE_ARTIFACT_TRACKING', 'false').lower() == 'true':
+      pipeline_run['metadata']['annotations'].pop('tekton.dev/output_artifacts', None)
+      pipeline_run['metadata']['annotations'].pop('tekton.dev/input_artifacts', None)
+      pipeline_run['metadata']['annotations'].pop('tekton.dev/artifact_items', None)
+
     if self.pipeline_labels:
       pipeline_run['metadata']['labels'] = pipeline_run['metadata'].setdefault('labels', {})
       pipeline_run['metadata']['labels'].update(self.pipeline_labels)
@@ -1386,11 +1394,13 @@ class TektonCompiler(Compiler):
 
     # add workflow level timeout to pipeline run
     if not TEKTON_GLOBAL_DEFAULT_TIMEOUT or pipeline.conf.timeout:
+      pipeline_run['spec']['timeouts'] = {'pipeline': '0s', 'tasks': '0s'}
       if pipeline.conf.timeout > 0:
-        pipeline_run['spec']['timeout'] = '%ds' % pipeline.conf.timeout
+        pipeline_run['spec']['timeouts']['tasks'] = '%ds' % pipeline.conf.timeout
+        pipeline_run['spec']['timeouts']['pipeline'] = '%ds' % (pipeline.conf.timeout + DEFAULT_FINALLY_SECONDS)
       else:
-        pipeline_run['spec']['timeout'] = DEFAULT_TIMEOUT_MINUTES
-
+        pipeline_run['spec']['timeouts']['tasks'] = DEFAULT_TIMEOUT_MINUTES
+        pipeline_run['spec']['timeouts']['pipeline'] = DEFAULT_TIMEOUT_WITH_FINALLY_MINUTES
     # generate the Tekton podTemplate for image pull secret
     if len(pipeline.conf.image_pull_secrets) > 0:
       pipeline_run['spec']['podTemplate'] = pipeline_run['spec'].get('podTemplate', {})

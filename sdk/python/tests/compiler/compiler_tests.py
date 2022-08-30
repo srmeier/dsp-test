@@ -78,6 +78,13 @@ class TestTektonCompiler(unittest.TestCase):
     from .testdata.condition import flipcoin
     self._test_pipeline_workflow(flipcoin, 'condition.yaml', skip_noninlined=True)
 
+  def test_finally_context_var_workflow(self):
+    """
+    Test compiling a exit handler workflow with Tekton context variable
+    """
+    from .testdata.finally_context_var import any_sequencer_in_finally
+    self._test_pipeline_workflow(any_sequencer_in_finally, 'finally_context_var.yaml', skip_noninlined=True)
+
   def test_condition_custom_task_workflow(self):
     """
     Test compiling a conditional workflow with custom task
@@ -939,10 +946,11 @@ class TestTektonCompiler(unittest.TestCase):
           obj = yaml.safe_load(f)
         text = yaml.safe_dump(obj)
         self.assertNotRegex(text, "stepTemplate")
-        artifact_items = obj['metadata']['annotations']['tekton.dev/artifact_items']
-        items_for_op0 = list(json.loads(artifact_items).values())[0]
-        names_of_items_for_op0 = set([item[0] for item in items_for_op0])
-        self.assertSetEqual(names_of_items_for_op0, {"incr_i", "sq_i"})
+        artifact_items = obj['metadata']['annotations'].get('tekton.dev/artifact_items', {})
+        if artifact_items:
+          items_for_op0 = list(json.loads(artifact_items).values())[0]
+          names_of_items_for_op0 = set([item[0] for item in items_for_op0])
+          self.assertSetEqual(names_of_items_for_op0, {"incr_i", "sq_i"})
     finally:
       shutil.rmtree(temp_dir)
 
