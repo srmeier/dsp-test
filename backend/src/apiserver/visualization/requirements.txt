@@ -17,10 +17,10 @@ bokeh==1.2.0              # via -r -
 cached-property==1.5.2    # via h5py
 cachetools==4.2.4         # via apache-beam, google-auth
 certifi==2021.10.8        # via requests
-cffi==1.15.0              # via argon2-cffi-bindings
+cffi==1.15.0
+cython              # via argon2-cffi-bindings
 charset-normalizer==2.0.9  # via requests
-crcmod==1.7               # via apache-beam
-dataclasses==0.8          # via apache-beam, argon2-cffi, libcst, werkzeug
+dataclasses==0.6          # via apache-beam, argon2-cffi, libcst, werkzeug
 decorator==5.1.0          # via gcsfs, ipython, traitlets
 defusedxml==0.7.1         # via nbconvert
 dill==0.3.1.1             # via apache-beam
