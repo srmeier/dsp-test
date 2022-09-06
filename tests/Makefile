@@ -1,4 +1,4 @@
-IMAGE=odh-manifests-test
+IMAGE=ml-pipelines-tests
 GIT_ORG=opendatahub-io
 GIT_BRANCH=master
 ODHPROJECT=opendatahub
