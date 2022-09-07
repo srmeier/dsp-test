@@ -50,10 +50,10 @@ RUN pip3 install micropipenv &&\
     micropipenv install
 
 COPY setup/operatorsetup scripts/install.sh scripts/installandtest.sh $HOME/peak/
-COPY resources $HOME/peak/operator-tests/odh-manifests/resources
-COPY util $HOME/peak/operator-tests/odh-manifests
+COPY resources $HOME/peak/operator-tests/ml-pipelines/resources
+COPY util $HOME/peak/operator-tests/ml-pipelines
 COPY setup/kfctl_openshift.yaml $HOME/kfdef/
-COPY basictests $HOME/peak/operator-tests/odh-manifests/basictests
+COPY basictests $HOME/peak/operator-tests/ml-pipelines/basictests
 
 RUN chmod -R 777 $HOME/kfdef && \
     mkdir -p $HOME/.kube && \
