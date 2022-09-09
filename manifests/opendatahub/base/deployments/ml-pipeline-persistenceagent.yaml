@@ -31,6 +31,22 @@ spec:
           image: persistenceagent
           imagePullPolicy: IfNotPresent
           name: ml-pipeline-persistenceagent
+          livenessProbe:
+            exec:
+              command:
+                - pidof
+                - persistence_agent
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            timeoutSeconds: 2
+          readinessProbe:
+            exec:
+              command:
+                - pidof
+                - persistence_agent
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            timeoutSeconds: 2
           resources:
             requests:
               cpu: 120m

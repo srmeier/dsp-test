@@ -27,3 +27,15 @@ spec:
               name: md-envoy
             - containerPort: 9901
               name: envoy-admin
+          livenessProbe:
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            tcpSocket:
+              port: md-envoy
+            timeoutSeconds: 2
+          readinessProbe:
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            tcpSocket:
+              port: md-envoy
+            timeoutSeconds: 2
