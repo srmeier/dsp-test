@@ -18,7 +18,7 @@ cached-property==1.5.2    # via h5py
 cachetools==4.2.4         # via apache-beam, google-auth
 certifi==2021.10.8        # via requests
 cffi==1.15.0
-cython              # via argon2-cffi-bindings
+cython==0.29.32            # via argon2-cffi-bindings
 charset-normalizer==2.0.9  # via requests
 dataclasses==0.6          # via apache-beam, argon2-cffi, libcst, werkzeug
 decorator==5.1.0          # via gcsfs, ipython, traitlets
