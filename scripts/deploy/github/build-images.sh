@@ -23,6 +23,7 @@ REGISTRY="${REGISTRY:-kind-registry:5000}"
 docker build -t "${REGISTRY}/kfp-tekton/apiserver:latest" -f backend/Dockerfile . && docker push "${REGISTRY}/kfp-tekton/apiserver:latest" &
 docker build -t "${REGISTRY}/kfp-tekton/persistenceagent:latest" -f backend/Dockerfile.persistenceagent . && docker push "${REGISTRY}/kfp-tekton/persistenceagent:latest" &
 docker build -t "${REGISTRY}/kfp-tekton/metadata-writer:latest" -f backend/metadata_writer/Dockerfile . && docker push "${REGISTRY}/kfp-tekton/metadata-writer:latest" &
+docker build -t "${REGISTRY}/kfp-tekton/artifact-manager:latest" -f backend/artifact_manager/Dockerfile . && docker push "${REGISTRY}/kfp-tekton/artifact-manager:latest" &
 docker build -t "${REGISTRY}/kfp-tekton/scheduledworkflow:latest" -f backend/Dockerfile.scheduledworkflow . && docker push "${REGISTRY}/kfp-tekton/scheduledworkflow:latest" &
 docker build -t "${REGISTRY}/kfp-tekton/cache-server:latest" -f backend/Dockerfile.cacheserver . && docker push "${REGISTRY}/kfp-tekton/cache-server:latest" &
 
