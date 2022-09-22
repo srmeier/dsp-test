@@ -55,16 +55,16 @@ spec:
                   key: dbPort
                   name: $(pipeline_install_configuration)
           image: metadata-grpc
-          livenessProbe:
-            initialDelaySeconds: 3
-            periodSeconds: 5
-            tcpSocket:
-              port: grpc-api
-            timeoutSeconds: 2
           name: container
           ports:
             - containerPort: 8080
               name: grpc-api
+          livenessProbe:
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            tcpSocket:
+              port: grpc-api
+            timeoutSeconds: 2
           readinessProbe:
             initialDelaySeconds: 3
             periodSeconds: 5

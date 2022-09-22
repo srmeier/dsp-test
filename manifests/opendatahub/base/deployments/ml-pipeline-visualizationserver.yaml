@@ -21,6 +21,10 @@ spec:
       containers:
         - image: visualization-server
           imagePullPolicy: IfNotPresent
+          name: ml-pipeline-visualizationserver
+          ports:
+            - containerPort: 8888
+              name: http
           livenessProbe:
             exec:
               command:
@@ -30,13 +34,9 @@ spec:
                 - -O
                 - '-'
                 - http://localhost:8888/
-            initialDelaySeconds: 3
+            initialDelaySeconds: 30
             periodSeconds: 5
             timeoutSeconds: 2
-          name: ml-pipeline-visualizationserver
-          ports:
-            - containerPort: 8888
-              name: http
           readinessProbe:
             exec:
               command:

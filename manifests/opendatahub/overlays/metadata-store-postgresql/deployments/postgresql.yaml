@@ -35,6 +35,8 @@ spec:
             - name: POSTGRESQL_DATABASE
               value: kfp-tekton
           imagePullPolicy: Always
+          ports:
+            - containerPort: 5432
           livenessProbe:
             exec:
               command:
@@ -42,8 +44,6 @@ spec:
                 - --live
             initialDelaySeconds: 120
             timeoutSeconds: 10
-          ports:
-            - containerPort: 5432
           readinessProbe:
             exec:
               command:

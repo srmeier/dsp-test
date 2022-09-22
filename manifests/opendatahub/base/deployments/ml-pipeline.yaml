@@ -121,6 +121,12 @@ spec:
                   name: $(pipeline_install_configuration)
           image: api-server
           imagePullPolicy: Always
+          name: ml-pipeline-api-server
+          ports:
+            - containerPort: 8888
+              name: http
+            - containerPort: 8887
+              name: grpc
           livenessProbe:
             exec:
               command:
@@ -133,12 +139,6 @@ spec:
             initialDelaySeconds: 3
             periodSeconds: 5
             timeoutSeconds: 2
-          name: ml-pipeline-api-server
-          ports:
-            - containerPort: 8888
-              name: http
-            - containerPort: 8887
-              name: grpc
           readinessProbe:
             exec:
               command:

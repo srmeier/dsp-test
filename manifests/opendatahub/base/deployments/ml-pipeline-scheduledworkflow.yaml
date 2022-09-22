@@ -32,4 +32,20 @@ spec:
           image: scheduledworkflow
           imagePullPolicy: IfNotPresent
           name: ml-pipeline-scheduledworkflow
+          livenessProbe:
+            exec:
+              command:
+                - pidof
+                - controller
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            timeoutSeconds: 2
+          readinessProbe:
+            exec:
+              command:
+                - pidof
+                - controller
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            timeoutSeconds: 2
       serviceAccountName: ml-pipeline-scheduledworkflow
