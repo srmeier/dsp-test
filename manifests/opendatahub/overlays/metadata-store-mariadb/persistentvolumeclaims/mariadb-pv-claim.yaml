@@ -3,7 +3,7 @@ kind: PersistentVolumeClaim
 metadata:
   labels:
     application-crd-id: kubeflow-pipelines
-  name: mysql-pv-claim
+  name: mariadb-pv-claim
 spec:
   accessModes:
     - ReadWriteOnce

@@ -3,25 +3,25 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: mysql
+    app: mariadb
     application-crd-id: kubeflow-pipelines
-  name: mysql
+  name: mariadb
 spec:
   replicas: 1
   strategy:
     type: Recreate  # Need this since backing PVC is ReadWriteOnce, which creates resource lock condition in default Rolling strategy
   selector:
     matchLabels:
-      app: mysql
+      app: mariadb
       application-crd-id: kubeflow-pipelines
   template:
     metadata:
       labels:
-        app: mysql
+        app: mariadb
         application-crd-id: kubeflow-pipelines
     spec:
       containers:
-        - name: mysql
+        - name: mariadb
           image: mysql
           ports:
             - containerPort: 3306
@@ -73,9 +73,9 @@ spec:
               cpu: 500m
               memory: 1Gi
           volumeMounts:
-            - name: mysql-persistent-storage
+            - name: mariadb-persistent-storage
               mountPath: /var/lib/mysql
       volumes:
-        - name: mysql-persistent-storage
+        - name: mariadb-persistent-storage
           persistentVolumeClaim:
-            claimName: mysql-pv-claim
+            claimName: mariadb-pv-claim

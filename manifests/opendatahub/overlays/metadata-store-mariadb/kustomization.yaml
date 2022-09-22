@@ -13,7 +13,7 @@ resources:
   - ./secrets/mysql-secret.yaml
 
   # PersistentVolumeClaims
-  - ./persistentvolumeclaims/mysql-pv-claim.yaml
+  - ./persistentvolumeclaims/mariadb-pv-claim.yaml
 
   # Deployments
   - ./deployments/mariadb.yaml
