@@ -5,14 +5,14 @@ data:
   appVersion: 1.7.0
   autoUpdatePipelineDefaultVersion: "true"
   bucketName: mlpipeline
-  cacheDb: cachedb
+  cacheDb: mlpipeline
   cacheImage: registry.access.redhat.com/ubi8/ubi-minimal
   cacheNodeRestrictions: "false"
   cronScheduleTimezone: UTC
   dbHost: mysql
   dbPort: "3306"
   defaultPipelineRoot: ""
-  mlmdDb: metadb
+  mlmdDb: mlpipeline
   pipelineDb: mlpipeline
   warning: |
     1. Do not use kubectl to edit this configmap, because some values are used
