@@ -187,6 +187,7 @@ build-backend-images: \
 	build-api-server-image \
 	build-persistenceagent-image \
 	build-metadata-writer-image \
+	build-artifact-manager-image \
 	build-scheduledworkflow-image \
 	build-cacheserver-image \
 	## Build backend docker images
@@ -203,6 +204,10 @@ build-persistenceagent-image: ## Build persistenceagent docker image
 .PHONY: build-metadata-writer-image
 build-metadata-writer-image: ## Build metadata-writer docker image
 	docker build -t ${DOCKER_REGISTRY}/metadata-writer -f backend/metadata_writer/Dockerfile .
+
+.PHONY: build-artifact-manager-image
+build-artifact-manager-image: ## Build artifact-manager docker image
+	docker build -t ${DOCKER_REGISTRY}/artifact-manager -f backend/artifact_manager/Dockerfile .
 
 .PHONY: build-scheduledworkflow-image
 build-scheduledworkflow-image: ## Build scheduledworkflow docker image

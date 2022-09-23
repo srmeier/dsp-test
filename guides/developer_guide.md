@@ -109,6 +109,7 @@ The KFP backend with Tekton uses a modified version of Kubeflow Pipelines api-se
    docker build -t ${DOCKER_REGISTRY}/api-server -f backend/Dockerfile .
    docker build -t ${DOCKER_REGISTRY}/persistenceagent -f backend/Dockerfile.persistenceagent .
    docker build -t ${DOCKER_REGISTRY}/metadata-writer -f backend/metadata_writer/Dockerfile .
+   docker build -t ${DOCKER_REGISTRY}/artifact-manager -f backend/artifact_manager/Dockerfile .
    docker build -t ${DOCKER_REGISTRY}/scheduledworkflow -f backend/Dockerfile.scheduledworkflow .
    docker build -t ${DOCKER_REGISTRY}/cache-server -f backend/Dockerfile.cacheserver .
    ```

@@ -5,7 +5,7 @@ data:
   artifact_bucket: mlpipeline
   artifact_endpoint: minio-service:9000
   artifact_endpoint_scheme: http://
-  artifact_image: quay.io/thoth-station/document-sync-job:v0.1.0
+  artifact_image: quay.io/opendatahub/ml-pipelines-artifact-manager:latest
   artifact_script: |-
     #!/usr/bin/env sh
     push_artifact() {
