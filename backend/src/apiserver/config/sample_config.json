@@ -1,7 +1,7 @@
 [
   {
     "name": "[Demo] flip-coin",
-    "description": "[source code](https://github.com/kubeflow/kfp-tekton/tree/master/samples/flip-coin) A conditional pipeline to flip coins based on a random number generator.",
+    "description": "[source code](https://github.com/opendatahub-io/ml-pipelines/tree/master/samples/flip-coin) A conditional pipeline to flip coins based on a random number generator.",
     "file": "/samples/flip-coin/condition.yaml"
   }
 ]
