@@ -1,6 +1,6 @@
 # ML Pipelines
 
-ML Pipelines is the Open Data Hub's pipeline solution for data scientists. It is built on top of the upstream [Kubeflow Piplines](https://github.com/kubeflow/pipelines) and [kfp-tekton](https://github.com/kubeflow/kfp-tekton) projects. The Open Data Hub community has a [fork](https://github.com/opendatahub-io/ml-pipelines) of this upstream under the Open Data Hub org.
+ML Pipelines is the Open Data Hub's pipeline solution for data scientists. It is built on top of the upstream [Kubeflow Piplines](https://github.com/kubeflow/pipelines) and [kfp-tekton](https://github.com/kubeflow/kfp-tekton) projects. The Open Data Hub community has a [fork](https://github.com/opendatahub-io/data-science-pipelines) of this upstream under the Open Data Hub org.
 
 
 ## Installation
