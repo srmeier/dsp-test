@@ -51,4 +51,7 @@ spec:
             requests:
               cpu: 120m
               memory: 500Mi
+            limits:
+              cpu: 250m
+              memory: 1Gi
       serviceAccountName: ml-pipeline-persistenceagent

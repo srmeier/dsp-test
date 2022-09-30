@@ -49,8 +49,11 @@ spec:
             timeoutSeconds: 1
           resources:
             requests:
-              cpu: 100m
+              cpu: 300m
               memory: 800Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
           volumeMounts:
             - mountPath: /var/lib/mysql
               name: mysql-persistent-storage
