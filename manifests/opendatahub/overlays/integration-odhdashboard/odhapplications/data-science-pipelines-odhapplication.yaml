@@ -6,8 +6,8 @@ metadata:
     opendatahub.io/categories: 'Model development,Model training,Model optimization,Data analysis,Data preprocessing'
 spec:
   beta: true
-  betaTitle: Data Science Pipelines
-  betaText: This application is available for early access prior to official release.
+  betaTitle: Data Science Pipelines (beta)
+  betaText: This beta application is available for early access prior to official release.
   displayName: Data Science Pipelines
   description: Data Science Pipelines is a workflow platform with a focus on enabling Machine Learning operations such as Model development, experimentation, orchestration and automation.
   provider: Red Hat
