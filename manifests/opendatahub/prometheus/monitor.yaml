@@ -2,7 +2,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   labels:
-    application-crd-id: kubeflow-pipelines
+    application-crd-id: data-science-pipelines
   name: ml-pipelines-metrics-monitor
 spec:
   endpoints:
@@ -10,4 +10,4 @@ spec:
       port: http
   selector:
     matchLabels:
-      application-crd-id: kubeflow-pipelines
+      application-crd-id: data-science-pipelines

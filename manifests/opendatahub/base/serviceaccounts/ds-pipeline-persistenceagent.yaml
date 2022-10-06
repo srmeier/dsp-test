@@ -3,4 +3,4 @@ kind: ServiceAccount
 metadata:
   labels:
     application-crd-id: data-science-pipelines
-  name: mysql
+  name: ds-pipeline-persistenceagent

@@ -2,12 +2,13 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   labels:
+    app: ds-pipeline
     application-crd-id: data-science-pipelines
-  name: pipeline-runner-binding
+  name: ds-pipeline
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: pipeline-runner
+  name: ds-pipeline
 subjects:
   - kind: ServiceAccount
-    name: pipeline-runner
+    name: ds-pipeline
