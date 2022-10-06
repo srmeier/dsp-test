@@ -34,8 +34,8 @@ spec:
     - title: Install Python SDK and compile sample pipeline
       description: |-
         ### Install the Kubeflow Pipelines Python SDK
-        1. Follow the [Kubeflow Pipelines Tekton Python SDK Installation instructions](https://github.com/opendatahub-io/ml-pipelines/blob/master/samples/README.md#prerequisites)
-        2. Download, clone or copy the [flip-coin example pipeline](https://github.com/opendatahub-io/ml-pipelines/blob/master/samples/flip-coin/condition.py)
+        1. Follow the [Kubeflow Pipelines Tekton Python SDK Installation instructions](https://github.com/opendatahub-io/data-science-pipelines/blob/master/samples/README.md#prerequisites)
+        2. Download, clone or copy the [flip-coin example pipeline](https://github.com/opendatahub-io/data-science-pipelines/blob/master/samples/flip-coin/condition.py)
         3. Compile the python pipeline defintion into a Tekton YAML:
         ```
         python condition.py
