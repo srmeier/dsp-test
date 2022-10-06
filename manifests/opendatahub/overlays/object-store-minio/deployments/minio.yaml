@@ -3,20 +3,20 @@ kind: Deployment
 metadata:
   labels:
     app: minio
-    application-crd-id: kubeflow-pipelines
+    application-crd-id: data-science-pipelines
   name: minio
 spec:
   selector:
     matchLabels:
       app: minio
-      application-crd-id: kubeflow-pipelines
+      application-crd-id: data-science-pipelines
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
         app: minio
-        application-crd-id: kubeflow-pipelines
+        application-crd-id: data-science-pipelines
     spec:
       containers:
         - args:

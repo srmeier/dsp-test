@@ -4,7 +4,7 @@ kind: Deployment
 metadata:
   labels:
     app: mariadb
-    application-crd-id: kubeflow-pipelines
+    application-crd-id: data-science-pipelines
   name: mariadb
 spec:
   replicas: 1
@@ -13,12 +13,12 @@ spec:
   selector:
     matchLabels:
       app: mariadb
-      application-crd-id: kubeflow-pipelines
+      application-crd-id: data-science-pipelines
   template:
     metadata:
       labels:
         app: mariadb
-        application-crd-id: kubeflow-pipelines
+        application-crd-id: data-science-pipelines
     spec:
       containers:
         - name: mariadb

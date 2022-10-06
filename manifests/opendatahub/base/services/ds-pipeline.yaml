@@ -3,12 +3,17 @@ kind: Service
 metadata:
   labels:
     application-crd-id: data-science-pipelines
-  name: mysql
+  name: ds-pipeline
 spec:
   ports:
-    - port: 3306
+    - name: http
+      port: 8888
       protocol: TCP
-      targetPort: 3306
+      targetPort: 8888
+    - name: grpc
+      port: 8887
+      protocol: TCP
+      targetPort: 8887
   selector:
-    app: mariadb
+    app: ds-pipeline
     application-crd-id: data-science-pipelines
