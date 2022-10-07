@@ -57,13 +57,6 @@ configMapGenerator:
     envs:
       - params.env
 vars:
-  - name: namespace
-    objref:
-      kind: ConfigMap
-      name: ds-pipeline-config
-      apiVersion: v1
-    fieldref:
-      fieldpath: metadata.namespace
   - name: artifact_secret_name
     objref:
       name: ds-pipeline-params-config
