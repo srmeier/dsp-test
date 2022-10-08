@@ -9,9 +9,6 @@ resources:
   # ServiceAccounts
   - ./serviceaccounts/postgresql.yaml
 
-  # Secrets
-  - ./secrets/postgresql-secret.yaml
-
   # PersistentVolumeClaims
   - ./persistentvolumeclaims/postgresql-pv-claim.yaml
 

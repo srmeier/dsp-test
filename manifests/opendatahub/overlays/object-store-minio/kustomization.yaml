@@ -6,7 +6,6 @@ bases:
   - ../../base
 
 resources:
-  - ./secrets/mlpipeline-minio-artifact.yaml
   - ./deployments/minio.yaml
   - ./persistentvolumeclaims/minio-pvc.yaml
   - ./services/minio-service.yaml
