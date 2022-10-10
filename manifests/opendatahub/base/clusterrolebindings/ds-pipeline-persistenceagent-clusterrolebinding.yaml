@@ -1,13 +1,13 @@
 apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
+kind: ClusterRoleBinding
 metadata:
   labels:
     application-crd-id: data-science-pipelines
-  name: ds-pipeline-persistenceagent-binding
+  name: ds-pipeline-persistenceagent-clusterrolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: ds-pipeline-persistenceagent-role
+  kind: ClusterRole
+  name: ds-pipeline-persistenceagent-clusterrole
 subjects:
   - kind: ServiceAccount
     name: ds-pipeline-persistenceagent

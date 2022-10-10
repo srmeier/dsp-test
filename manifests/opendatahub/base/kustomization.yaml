@@ -15,18 +15,22 @@ resources:
   - ./deployments/ds-pipeline.yaml
 
   # Rolebindings
-  - ./rolebindings/ds-pipeline-persistenceagent-binding.yaml
   - ./rolebindings/ds-pipeline-scheduledworkflow-binding.yaml
   - ./rolebindings/ds-pipeline-viewer-crd-binding.yaml
   - ./rolebindings/ds-pipeline.yaml
   - ./rolebindings/pipeline-runner-binding.yaml
 
   # Roles
-  - ./roles/ds-pipeline-persistenceagent-role.yaml
   - ./roles/ds-pipeline-scheduledworkflow-role.yaml
   - ./roles/ds-pipeline-viewer-controller-role.yaml
   - ./roles/ds-pipeline.yaml
   - ./roles/pipeline-runner.yaml
+
+  # ClusterRoleBindings
+  - ./clusterrolebindings/ds-pipeline-persistenceagent-clusterrolebinding.yaml
+
+  # ClusterRoles
+  - ./clusterroles/ds-pipeline-persistenceagent-clusterrole.yaml
 
   # ServiceAccounts
   - ./serviceaccounts/ds-pipeline-container-builder.yaml
@@ -88,6 +92,7 @@ vars:
       apiVersion: v1
     fieldref:
       fieldpath: data.ds_pipelines_ui_configuration
+
 configurations:
   - params.yaml
 
