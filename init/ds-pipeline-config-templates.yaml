@@ -1,0 +1,104 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: ds-pipelines-db-template
+objects:
+  - apiVersion: v1
+    data:
+      apply_tekton_custom_resource: "true"
+      archive_logs: "false"
+      artifact_bucket: ${S3_BUCKET}
+      artifact_endpoint: ${S3_ENDPOINT}
+      artifact_endpoint_scheme: http://
+      artifact_image: quay.io/opendatahub/ml-pipelines-artifact-manager:latest
+      artifact_script: |-
+        #!/usr/bin/env sh
+        push_artifact() {
+            if [ -f "$2" ]; then
+                tar -cvzf $1.tgz $2
+                aws s3 --endpoint ${ARTIFACT_ENDPOINT_SCHEME}${ARTIFACT_ENDPOINT} cp $1.tgz s3://$ARTIFACT_BUCKET/artifacts/$PIPELINERUN/$PIPELINETASK/$1.tgz
+            else
+                echo "$2 file does not exist. Skip artifact tracking for $1"
+            fi
+        }
+        push_log() {
+            cat /var/log/containers/$PODNAME*$NAMESPACE*step-main*.log > step-main.log
+            push_artifact main-log step-main.log
+        }
+        strip_eof() {
+            if [ -f "$2" ]; then
+                awk 'NF' $2 | head -c -1 > $1_temp_save && cp $1_temp_save $2
+            fi
+        }
+      inject_default_script: "true"
+      strip_eof: "true"
+      terminate_status: Cancelled
+      track_artifacts: "true"
+    kind: ConfigMap
+    metadata:
+      labels:
+        application-crd-id: data-science-pipelines
+      name: ds-pipeline-config
+  - apiVersion: v1
+    data:
+      ConMaxLifeTimeSec: "120"
+      appName: pipeline
+      appVersion: 1.7.0
+      autoUpdatePipelineDefaultVersion: "true"
+      bucketName: ${S3_BUCKET}
+      cacheDb: ${DB_DATABASE}
+      cacheImage: registry.access.redhat.com/ubi8/ubi-minimal
+      cacheNodeRestrictions: "false"
+      cronScheduleTimezone: UTC
+      dbHost: ${DB_HOST}
+      dbPort: "${DB_PORT}"
+      defaultPipelineRoot: ""
+      mlmdDb: ${DB_DATABASE}
+      pipelineDb: ${DB_DATABASE}
+      warning: |
+        1. Do not use kubectl to edit this configmap, because some values are used
+        during kustomize build. Instead, change the configmap and apply the entire
+        kustomize manifests again.
+        2. After updating the configmap, some deployments may need to be restarted
+        until the changes take effect. A quick way to restart all deployments in a
+        namespace: `kubectl rollout restart deployment -n <your-namespace>`.
+    kind: ConfigMap
+    metadata:
+      labels:
+        application-crd-id: data-science-pipelines
+      name: pipeline-install-config
+  - apiVersion: v1
+    kind: Secret
+    metadata:
+      name: mysql-secret
+    stringData:
+      username: ${DB_USERNAME}
+      password: ${DB_PASSWORD}
+  - apiVersion: v1
+    kind: Secret
+    metadata:
+      name: mlpipeline-minio-artifact
+      labels:
+        application-crd-id: data-science-pipelines
+    stringData:
+      accesskey: ${S3_ACCESS_KEY}
+      secretkey: ${S3_SECRET_KEY}
+parameters:
+  - name: S3_ENDPOINT
+    value: "minio-service:9000"
+  - name: S3_ACCESS_KEY
+    value: minio
+  - name: S3_SECRET_KEY
+    value: minio123
+  - name: S3_BUCKET
+    value: mlpipeline
+  - name: DB_HOST
+    value: mysql
+  - name: DB_PORT
+    value: "3306"
+  - name: DB_USERNAME
+    value: mlpipeline
+  - name: DB_PASSWORD
+    value: mlpipeline
+  - name: DB_DATABASE
+    value: mlpipeline
