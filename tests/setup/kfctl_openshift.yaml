@@ -20,16 +20,16 @@ spec:
     name: openshift-pipelines
   - kustomizeConfig:
       overlays:
-        - metadata-store-mysql
-        - ml-pipeline-ui
+        - metadata-store-mariadb
+        - ds-pipeline-ui
         - object-store-minio
       repoRef:
         name: app
         path: manifests/opendatahub
-    name: ml-pipelines
+    name: data-science-pipelines
   repos:
   - name: manifests
     uri: https://github.com/opendatahub-io/odh-manifests/tarball/master
   - name: app
-    uri: https://github.com/opendatahub-io/ml-pipelines/tarball/master
+    uri: https://github.com/opendatahub-io/data-science-pipelines/tarball/master
   version: master

@@ -27,7 +27,7 @@ RUN curl -o /usr/local/bin/jq http://stedolan.github.io/jq/download/linux64/jq &
 
 RUN mkdir -p $HOME/src && \
     cd $HOME/src && \
-    git clone --depth=1 --branch ${BRANCH} https://github.com/${ORG}/ml-pipelines && \
+    git clone --depth=1 --branch ${BRANCH} https://github.com/${ORG}/data-science-ipelines && \
     # Clone ods-ci repo at specified git ref for the JupyterHub webUI tests
     git clone --depth=1 ${ODS_CI_REPO} ods-ci && cd ods-ci && \
     git fetch origin ${ODS_CI_GITREF} && git checkout FETCH_HEAD && \
@@ -50,10 +50,10 @@ RUN pip3 install micropipenv &&\
     micropipenv install
 
 COPY setup/operatorsetup scripts/install.sh scripts/installandtest.sh $HOME/peak/
-COPY resources $HOME/peak/operator-tests/ml-pipelines/resources
-COPY util $HOME/peak/operator-tests/ml-pipelines
+COPY resources $HOME/peak/operator-tests/data-science-pipelines/resources
+COPY util $HOME/peak/operator-tests/data-science-pipelines
 COPY setup/kfctl_openshift.yaml $HOME/kfdef/
-COPY basictests $HOME/peak/operator-tests/ml-pipelines/basictests
+COPY basictests $HOME/peak/operator-tests/data-science-pipelines/basictests
 
 RUN chmod -R 777 $HOME/kfdef && \
     mkdir -p $HOME/.kube && \

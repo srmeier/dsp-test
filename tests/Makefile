@@ -1,4 +1,4 @@
-IMAGE=ml-pipelines-tests
+IMAGE=data-science-pipelines-tests
 GIT_ORG=opendatahub-io
 GIT_BRANCH=master
 ODHPROJECT=opendatahub
