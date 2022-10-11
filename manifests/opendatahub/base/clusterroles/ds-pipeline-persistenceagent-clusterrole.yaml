@@ -1,9 +1,9 @@
 apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
+kind: ClusterRole
 metadata:
   labels:
     application-crd-id: data-science-pipelines
-  name: ds-pipeline-persistenceagent-role
+  name: ds-pipeline-persistenceagent-clusterrole
 rules:
   - apiGroups:
       - argoproj.io

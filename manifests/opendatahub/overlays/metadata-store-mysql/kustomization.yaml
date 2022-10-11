@@ -9,9 +9,6 @@ resources:
   # ServiceAccounts
   - ./serviceaccounts/mysql.yaml
 
-  # Secrets
-  - ./secrets/mysql-secret.yaml
-
   # PersistentVolumeClaims
   - ./persistentvolumeclaims/mysql-pv-claim.yaml
 

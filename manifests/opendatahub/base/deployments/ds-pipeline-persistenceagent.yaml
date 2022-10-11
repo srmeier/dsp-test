@@ -30,7 +30,6 @@ spec:
           command:
             - persistence_agent
             - "--logtostderr=true"
-            - "--namespace=$(namespace)"
             - "--ttlSecondsAfterWorkflowFinish=86400"
             - "--numWorker=2"
             - "--mlPipelineAPIServerName=ds-pipeline"
