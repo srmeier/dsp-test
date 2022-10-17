@@ -23,6 +23,7 @@ spec:
         - metadata-store-mariadb
         - ds-pipeline-ui
         - object-store-minio
+        - default-configs
       repoRef:
         name: app
         path: manifests/opendatahub

@@ -29,6 +29,7 @@ function create_pipeline() {
     if [[ -z $route ]]; then
         oc expose service ds-pipeline
     fi
+    sleep 60  #TODO: quick fix for race condition, implement a better check to begin test execution once service is ready
     ROUTE=$(oc get route ds-pipeline --template={{.spec.host}})
     PIPELINE_ID=$(curl -s -F "uploadfile=@${RESOURCEDIR}/ds-pipelines/test-pipeline-run.yaml" ${ROUTE}/apis/v1beta1/pipelines/upload | jq -r .id)
     os::cmd::try_until_not_text "curl -s ${ROUTE}/apis/v1beta1/pipelines/${PIPELINE_ID} | jq" "null" $odhdefaulttimeout $odhdefaultinterval
