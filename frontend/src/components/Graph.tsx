@@ -119,7 +119,7 @@ class GraphErrorBoundary extends React.Component<GraphErrorBoundaryProps> {
 
   componentDidCatch(error: Error): void {
     const message = 'There was an error rendering the graph.';
-    const additionalInfo = `${message} This is likely a bug in Kubeflow Pipelines. Error message: '${error.message}'.`;
+    const additionalInfo = `${message} This is likely a bug in Data Science Pipelines. Error message: '${error.message}'.`;
     if (this.props.onError) {
       this.props.onError(message, additionalInfo);
     }

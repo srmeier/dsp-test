@@ -165,7 +165,7 @@ describe('Graph', () => {
     const [message, additionalInfo] = onError.mock.calls[0];
     expect(message).toEqual('There was an error rendering the graph.');
     expect(additionalInfo).toEqual(
-      "There was an error rendering the graph. This is likely a bug in Kubeflow Pipelines. Error message: 'Graph definition is invalid. Cannot get node by 'node1'.'.",
+      "There was an error rendering the graph. This is likely a bug in Data Science Pipelines. Error message: 'Graph definition is invalid. Cannot get node by 'node1'.'.",
     );
   });
 });
