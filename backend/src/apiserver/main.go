@@ -62,7 +62,7 @@ func main() {
 	resourceManager := resource.NewResourceManager(&clientManager)
 	err := loadSamples(resourceManager)
 	if err != nil {
-		glog.Fatalf("Failed to load samples. Err: %v", err)
+		glog.Warningf("Failed to load samples. Err: %v", err)
 	}
 
 	_, err = resourceManager.CreateDefaultExperiment()
