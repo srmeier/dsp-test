@@ -33,7 +33,7 @@ import (
 	fakeclient "github.com/kubeflow/kfp-tekton/tekton-catalog/pipeline-loops/pkg/client/injection/client/fake"
 	fakepipelineloopinformer "github.com/kubeflow/kfp-tekton/tekton-catalog/pipeline-loops/pkg/client/injection/informers/pipelineloop/v1alpha1/pipelineloop/fake"
 	"github.com/kubeflow/kfp-tekton/tekton-catalog/pipeline-loops/test"
-	_ "github.com/mattn/go-sqlite3"
+	"github.com/tektoncd/pipeline/pkg/apis/pipeline/pod"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	ttesting "github.com/tektoncd/pipeline/pkg/reconciler/testing"
@@ -61,7 +61,7 @@ var (
 
 func initCacheParams() {
 	tmp := os.TempDir()
-	params.DbDriver = "sqlite3"
+	params.DbDriver = "sqlite"
 	params.DbName = tmp + "/testing.db"
 	params.Timeout = 2 * time.Second
 }
@@ -332,7 +332,7 @@ var newPipelineLoop = &pipelineloopv1alpha1.PipelineLoop{
 		PipelineRef:        &v1beta1.PipelineRef{Name: "a-pipeline"},
 		IterateParam:       "current-item",
 		ServiceAccountName: "default",
-		PodTemplate: &v1beta1.PodTemplate{
+		PodTemplate: &pod.PodTemplate{
 			HostAliases: []corev1.HostAlias{{
 				IP:        "0.0.0.0",
 				Hostnames: []string{"localhost"},
@@ -342,7 +342,7 @@ var newPipelineLoop = &pipelineloopv1alpha1.PipelineLoop{
 		TaskRunSpecs: []v1beta1.PipelineTaskRunSpec{{
 			PipelineTaskName:       "test-task",
 			TaskServiceAccountName: "test",
-			TaskPodTemplate: &v1beta1.PodTemplate{
+			TaskPodTemplate: &pod.PodTemplate{
 				HostAliases: []corev1.HostAlias{{
 					IP:        "0.0.0.0",
 					Hostnames: []string{"localhost"},
@@ -585,7 +585,7 @@ var runNewPipelineLoopWithPodTemplateAndSA = &v1alpha1.Run{
 			Value: v1beta1.ArrayOrString{Type: v1beta1.ParamTypeArray, ArrayVal: []string{"item1", "item2"}},
 		}},
 		ServiceAccountName: "pipeline-runner",
-		PodTemplate: &v1beta1.PodTemplate{
+		PodTemplate: &pod.PodTemplate{
 			HostAliases: []corev1.HostAlias{{
 				IP:        "0.0.0.0",
 				Hostnames: []string{"localhost"},
@@ -1592,7 +1592,7 @@ var expectedPipelineRunWithPodTemplateAndSA = &v1beta1.PipelineRun{
 			Value: v1beta1.ArrayOrString{Type: v1beta1.ParamTypeString, StringVal: "item1"},
 		}},
 		ServiceAccountName: "pipeline-runner",
-		PodTemplate: &v1beta1.PodTemplate{
+		PodTemplate: &pod.PodTemplate{
 			HostAliases: []corev1.HostAlias{{
 				IP:        "0.0.0.0",
 				Hostnames: []string{"localhost"},
@@ -1635,7 +1635,7 @@ var expectedPipelineRunWithPodTemplate = &v1beta1.PipelineRun{
 			Value: v1beta1.ArrayOrString{Type: v1beta1.ParamTypeString, StringVal: "item1"},
 		}},
 		ServiceAccountName: "default",
-		PodTemplate: &v1beta1.PodTemplate{
+		PodTemplate: &pod.PodTemplate{
 			HostAliases: []corev1.HostAlias{{
 				IP:        "0.0.0.0",
 				Hostnames: []string{"localhost"},
@@ -1645,7 +1645,7 @@ var expectedPipelineRunWithPodTemplate = &v1beta1.PipelineRun{
 		TaskRunSpecs: []v1beta1.PipelineTaskRunSpec{{
 			PipelineTaskName:       "test-task",
 			TaskServiceAccountName: "test",
-			TaskPodTemplate: &v1beta1.PodTemplate{
+			TaskPodTemplate: &pod.PodTemplate{
 				HostAliases: []corev1.HostAlias{{
 					IP:        "0.0.0.0",
 					Hostnames: []string{"localhost"},
@@ -2078,8 +2078,6 @@ func TestReconcilePipelineLoopRun(t *testing.T) {
 	},
 	}
 
-	//testcases = testcases[len(testcases)-1:]
-
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
@@ -2289,8 +2287,18 @@ func enableCacheForRun(run *v1alpha1.Run) *v1alpha1.Run {
 	return run
 }
 
+func disableCacheForRun(run *v1alpha1.Run) *v1alpha1.Run {
+	run.ObjectMeta.Labels["pipelines.kubeflow.org/cache_enabled"] = "false"
+	return run
+}
+
 func enableCacheForPr(pr *v1beta1.PipelineRun) *v1beta1.PipelineRun {
 	pr.ObjectMeta.Labels["pipelines.kubeflow.org/cache_enabled"] = "true"
+	return pr
+}
+
+func disableCacheForPr(pr *v1beta1.PipelineRun) *v1beta1.PipelineRun {
+	pr.ObjectMeta.Labels["pipelines.kubeflow.org/cache_enabled"] = "false"
 	return pr
 }
 
@@ -2339,9 +2347,10 @@ func TestReconcilePipelineLoopRunCachedRun(t *testing.T) {
 			}
 			cm := corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "cache-config",
+					Name:      "cache-config",
+					Namespace: system.Namespace(),
 				},
-				Data: map[string]string{"driver": "sqlite3", "dbName": "/tmp/testing.db"},
+				Data: map[string]string{"driver": "sqlite", "dbName": "/tmp/testing2.db", "timeout": "2s"},
 			}
 			d := test.Data{
 				Runs:         []*v1alpha1.Run{tc.run},
@@ -2368,6 +2377,71 @@ func TestReconcilePipelineLoopRunCachedRun(t *testing.T) {
 			if err := checkEvents(testAssets.Recorder, tc.name, tc.expectedEvents); err != nil {
 				t.Errorf(err.Error())
 			}
+		})
+	}
+}
+func checkRunResult(t *testing.T, run *v1alpha1.Run, expectedResult []v1alpha1.RunResult) {
+	if len(run.Status.Results) != len(expectedResult) {
+		t.Errorf("Expected Run results to include %d results but found %d: %v", len(expectedResult), len(run.Status.Results), run.Status.Results)
+		//return
+	}
+
+	if d := cmp.Diff(expectedResult, run.Status.Results); d != "" {
+		t.Errorf("Run result for is incorrect. Diff %s", diff.PrintWantGot(d))
+	}
+}
+
+func TestReconcilePipelineLoopRunLastElemResult(t *testing.T) {
+	testcases := []struct {
+		name           string
+		pipeline       *v1beta1.Pipeline
+		pipelineloop   *pipelineloopv1alpha1.PipelineLoop
+		run            *v1alpha1.Run
+		pipelineruns   []*v1beta1.PipelineRun
+		expectedResult []v1alpha1.RunResult
+	}{{
+		name:           "Reconcile a new run with a pipelineloop that references a pipeline",
+		pipeline:       aPipeline,
+		pipelineloop:   aPipelineLoop,
+		run:            disableCacheForRun(runPipelineLoop),
+		pipelineruns:   []*v1beta1.PipelineRun{disableCacheForPr(successful(expectedPipelineRunIteration1)), disableCacheForPr(successful(expectedPipelineRunIteration2))},
+		expectedResult: []v1alpha1.RunResult{{Name: "last-idx", Value: "2"}, {Name: "last-elem", Value: "item2"}, {Name: "condition", Value: "succeeded"}},
+	}}
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+			names.TestingSeed()
+			optionalPipeline := []*v1beta1.Pipeline{tc.pipeline}
+			status := &pipelineloopv1alpha1.PipelineLoopRunStatus{}
+			tc.pipelineloop.Spec.SetDefaults(ctx)
+			status.PipelineLoopSpec = &tc.pipelineloop.Spec
+			err := tc.run.Status.EncodeExtraFields(status)
+			if err != nil {
+				t.Fatal("Failed to encode spec in the pipelineSpec:", err)
+			}
+			if tc.pipeline == nil {
+				optionalPipeline = nil
+			}
+
+			d := test.Data{
+				Runs:         []*v1alpha1.Run{tc.run},
+				Pipelines:    optionalPipeline,
+				PipelineRuns: tc.pipelineruns,
+			}
+
+			testAssets, _ := getPipelineLoopController(t, d, []*pipelineloopv1alpha1.PipelineLoop{tc.pipelineloop})
+			c := testAssets.Controller
+			clients := testAssets.Clients
+
+			if err := c.Reconciler.Reconcile(ctx, getRunName(tc.run)); err != nil {
+				t.Fatalf("Error reconciling: %s", err)
+			}
+			// Fetch the updated Run
+			reconciledRun, err := clients.Pipeline.TektonV1alpha1().Runs(tc.run.Namespace).Get(ctx, tc.run.Name, metav1.GetOptions{})
+			if err != nil {
+				t.Fatalf("Error getting reconciled run from fake client: %s", err)
+			}
+			checkRunResult(t, reconciledRun, tc.expectedResult)
 		})
 	}
 }

@@ -52,6 +52,8 @@ spec:
     tasks:
     - name: some-custom-task
       params:
+      - name: name
+        value: $(params.foo)
       - name: foo
         value: $(params.foo)
       - name: bar
@@ -62,7 +64,3 @@ spec:
         name: some-custom-resource
         apiVersion: custom.tekton.dev/v1alpha1
         kind: custom-task
-      timeout: 525600m
-  timeouts:
-    pipeline: 1051200m
-    tasks: 525600m

@@ -244,10 +244,15 @@ def _handle_tekton_custom_task(custom_task: dict, workflow: dict, recursive_task
 
             # add loop special fields
             custom_task_cr['kind'] = 'PipelineLoop'
-            if custom_task[custom_task_key]['spec'].get('parallelism') is not None:
-                custom_task_cr['spec']['parallelism'] = custom_task[custom_task_key]['spec']['parallelism']
-                # remove from pipeline run spec
-                del custom_task[custom_task_key]['spec']['parallelism']
+
+            def process_inline_cr_field(field_name):
+                if custom_task[custom_task_key]['spec'].get(field_name) is not None:
+                    custom_task_cr['spec'][field_name] = custom_task[custom_task_key]['spec'][field_name]
+                    # remove from pipeline run spec
+                    del custom_task[custom_task_key]['spec'][field_name]
+            process_fields = ['parallelism', 'iterateParamPassStyle', 'itemPassStyle']
+            for process_field in process_fields:
+                process_inline_cr_field(process_field)
             if custom_task[custom_task_key].get('iteration_number') is not None:
                 # enumerate() is used, TektonLoopIterationNumber is injected, get its name and remove it from params
                 custom_task_cr['spec']['iterationNumberParam'] = custom_task[custom_task_key]['iteration_number']
@@ -257,10 +262,10 @@ def _handle_tekton_custom_task(custom_task: dict, workflow: dict, recursive_task
                                                                       custom_task_cr['spec']['iterationNumberParam']]
             custom_task_cr['spec']['iterateParam'] = custom_task[custom_task_key]['loop_args']
             separator = custom_task[custom_task_key].get('separator')
+            start_end_step_keys = ['from', 'to', 'step']
             if separator is not None:
                 custom_task_cr['spec']['iterateParamStringSeparator'] = separator
             if custom_task[custom_task_key].get('start') is not None:
-                start_end_step_keys = ['from', 'to', 'step']
                 custom_task_cr['spec']['pipelineSpec']['params'] = [value for value
                                                                     in custom_task_cr['spec']['pipelineSpec']['params']
                                                                     if value['name'] not in start_end_step_keys]
@@ -270,10 +275,24 @@ def _handle_tekton_custom_task(custom_task: dict, workflow: dict, recursive_task
 
                 custom_task_cr['spec']['iterateNumeric'] = custom_task_cr['spec']['iterateParam']
                 custom_task_cr['spec'].pop('iterateParam')
+            # check whether or not the nested custom task param reference need to be replaced
+            custom_task_param_map = {}
             for custom_task_param in custom_task[custom_task_key]['spec']['params']:
                 if custom_task_param['name'] != custom_task[custom_task_key]['loop_args'] and '$(tasks.' in custom_task_param['value']:
+                    custom_task_param_map.setdefault(custom_task_param['value'], []).append('$(params.%s)' % custom_task_param['name'])
+            for key, item in custom_task_param_map.items():
+                replacement_item = None
+                if len(item) == 1:
+                    replacement_item = item[0]
+                if len(item) > 1:
+                    forbidden_keystrings = ['$(params.%s)' % x for x in start_end_step_keys]
+                    for i in item:
+                        if i not in forbidden_keystrings:
+                            replacement_item = i
+                            break
+                if replacement_item:
                     custom_task_cr = json.loads(
-                        json.dumps(custom_task_cr).replace(custom_task_param['value'], '$(params.%s)' % custom_task_param['name']))
+                        json.dumps(custom_task_cr).replace(key, replacement_item))
 
             # remove separator from CR params
             if custom_task[custom_task_key].get('separator') is not None:
@@ -314,9 +333,17 @@ def _handle_tekton_custom_task(custom_task: dict, workflow: dict, recursive_task
                                     json.dumps(task['params']).replace(task_param['value'],
                                     '$(params.%s)' % param_result[1]))
                             else:
+                                new_param_ref = '%s-%s' % param_result
+                                # Nested task reference name must be the same as the one in the pipeline params
+                                # Otherwise, use the default param ref since it will be generated
+                                # by the custom task functions such as condition and loop
+                                for i in custom_task_cr['spec']['pipelineSpec'].get('params', []):
+                                    if sanitize_k8s_name(i['name']) == new_param_ref:
+                                        new_param_ref = i['name']
+                                        break
                                 task['params'] = json.loads(
                                     json.dumps(task['params']).replace(task_param['value'],
-                                    '$(params.%s-%s)' % param_result))
+                                    '$(params.%s)' % new_param_ref))
         custom_task_crs.append(custom_task_cr)
         custom_task[custom_task_key]['spec']['params'] = sorted(custom_task[custom_task_key]['spec']['params'],
                                                                           key=lambda k: k['name'])
@@ -387,6 +414,17 @@ def _handle_tekton_custom_task(custom_task: dict, workflow: dict, recursive_task
                             break
                     if not has_nested_task:
                         break
+                nested_loop_counter_params = []
+                # Fetch nested loop counter params so that it won't find the nested parameters from
+                # global param level.
+                for task in custom_task_crs:
+                    if task['metadata']['name'] in all_nested_loop:
+                        # add additional pipelinerun controller generated params for the compiler to ignore for upward passing
+                        iterate_param_list = ['iterateNumeric', 'iterateParam', 'iterateParamStringSeparator', 'IterationNumberParam']
+                        for iterate_name in iterate_param_list:
+                            if task['spec'].get(iterate_name):
+                                nested_loop_counter_params.append(task['spec'].get(iterate_name))
+                        
                 for task in tasks:
                     if task['name'] == nested_custom_task['root_ct']:
                         task['params'].extend(copy.deepcopy(nested_custom_task_special_params))
@@ -404,7 +442,8 @@ def _handle_tekton_custom_task(custom_task: dict, workflow: dict, recursive_task
                 for custom_param in custom_task_cr['spec']['pipelineSpec']['params']:
                     all_params.append(''.join(['$(params.', custom_param['name'], ')']))
                 for global_task_value in global_task_values:
-                    if global_task_value not in all_params:
+                    if global_task_value not in all_params and \
+                        re.findall('\$\(params.([^ \t\n.:,;\{\}]+)\)', global_task_value)[0] not in nested_loop_counter_params:
                         all_params.append(global_task_value)
                         custom_task_cr['spec']['pipelineSpec']['params'].append(
                             {'name': re.findall('\$\(params.([^ \t\n.:,;\{\}]+)\)', global_task_value)[0],

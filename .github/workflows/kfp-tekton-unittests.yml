@@ -30,6 +30,10 @@ jobs:
   validate-testdata:
     runs-on: ubuntu-latest
     steps:
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.19.x
       - uses: actions/checkout@v2
       - name: Set up Python 3.7
         uses: actions/setup-python@v2
@@ -91,7 +95,7 @@ jobs:
     - name: Install Go
       uses: actions/setup-go@v2
       with:
-        go-version: 1.17.x
+        go-version: 1.19.x
     - name: Checkout code
       uses: actions/checkout@v2
     - name: "run go unit tests"
@@ -104,7 +108,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.17.x
+          go-version: 1.19.x
       - name: Checkout code
         uses: actions/checkout@v2
       - name: "run go pipelineLoop unit tests"
@@ -133,6 +137,9 @@ jobs:
         uses: container-tools/kind-action@v1
         with:
           cluster_name: kfp-tekton
+          kubectl_version: v1.24.7
+          version: v0.17.0
+          node_image: kindest/node:v1.24.7
       - name: build images
         if: ${{ steps.backend-changes.outputs.all }}
         run: ./scripts/deploy/github/build-images.sh

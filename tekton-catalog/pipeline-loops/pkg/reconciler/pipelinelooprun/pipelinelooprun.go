@@ -29,7 +29,8 @@ import (
 	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/clock"
+	"k8s.io/utils/clock"
+
 	duckv1 "knative.dev/pkg/apis/duck/v1"
 
 	"github.com/hashicorp/go-multierror"
@@ -104,6 +105,10 @@ type Reconciler struct {
 	pipelineRunLister     listers.PipelineRunLister
 	cacheStore            *cache.TaskCacheStore
 	clock                 clock.RealClock
+}
+type CacheKey struct {
+	Params           []v1beta1.Param                        `json:"params"`
+	PipelineLoopSpec *pipelineloopv1alpha1.PipelineLoopSpec `json:"pipelineSpec"`
 }
 
 var (
@@ -207,16 +212,21 @@ func (c *Reconciler) ReconcileKind(ctx context.Context, run *v1alpha1.Run) pkgre
 
 	if run.IsDone() {
 		if run.IsSuccessful() && !c.cacheStore.Disabled && isCachingEnabled(run) {
-			marshal, err := json.Marshal(status.PipelineLoopSpec)
+			marshal, err := json.Marshal(CacheKey{
+				PipelineLoopSpec: status.PipelineLoopSpec,
+				Params:           run.Spec.Params,
+			})
 			if err == nil {
 				hashSum := fmt.Sprintf("%x", md5.Sum(marshal))
-				resultBytes, err := json.Marshal(run.Status.Results)
-				_, err = c.cacheStore.Put(&model.TaskCache{
+				resultBytes, err1 := json.Marshal(run.Status.Results)
+				if err1 != nil {
+					return fmt.Errorf("error while marshalling result to cache for run: %s, %w", run.Name, err)
+				}
+				err = c.cacheStore.Put(&model.TaskCache{
 					TaskHashKey: hashSum,
 					TaskOutput:  string(resultBytes),
 				})
 				if err != nil {
-					logger.Errorf("Error while adding result to cache for run: %s, Error: %v", run.Name, err)
 					return fmt.Errorf("error while adding result to cache for run: %s, %w", run.Name, err)
 				}
 				logger.Infof("cached the results of successful run %s, with key: %s", run.Name, hashSum)
@@ -244,8 +254,6 @@ func (c *Reconciler) ReconcileKind(ctx context.Context, run *v1alpha1.Run) pkgre
 
 	afterCondition := run.Status.GetCondition(apis.ConditionSucceeded)
 	events.Emit(ctx, beforeCondition, afterCondition, run)
-
-	// Only transient errors that should retry the reconcile are returned.
 	return merr
 }
 
@@ -353,26 +361,7 @@ func (c *Reconciler) reconcile(ctx context.Context, run *v1alpha1.Run, status *p
 			pipelineLoopMeta.Namespace, pipelineLoopMeta.Name, err)
 		return nil
 	}
-	if !c.cacheStore.Disabled && isCachingEnabled(run) {
-		marshal, err := json.Marshal(pipelineLoopSpec)
-		if marshal != nil && err == nil {
-			hashSum = fmt.Sprintf("%x", md5.Sum(marshal))
-			taskCache, err := c.cacheStore.Get(hashSum)
-			if err == nil && taskCache != nil {
-				logger.Infof("Found a cached entry, for run: %s, with key:", run.Name, hashSum)
-				err := json.Unmarshal([]byte(taskCache.TaskOutput), &run.Status.Results)
-				if err != nil {
-					logger.Errorf("error while unmarshal of task output. %v", err)
-				}
-				run.Status.MarkRunSucceeded(pipelineloopv1alpha1.PipelineLoopRunReasonCacheHit.String(),
-					"A cached result of the previous run was found.")
-				return nil
-			}
-		}
-		if err != nil {
-			logger.Warnf("failed marshalling the spec, for pipelineloop: %s", pipelineLoopMeta.Name)
-		}
-	}
+
 	// Determine how many iterations of the Task will be done.
 	totalIterations, iterationElements, err := computeIterations(run, pipelineLoopSpec)
 	if err != nil {
@@ -391,7 +380,33 @@ func (c *Reconciler) reconcile(ctx context.Context, run *v1alpha1.Run, status *p
 	if err != nil {
 		return fmt.Errorf("error updating PipelineRun status for Run %s/%s: %w", run.Namespace, run.Name, err)
 	}
-
+	if !c.cacheStore.Disabled && isCachingEnabled(run) {
+		marshal, err := json.Marshal(CacheKey{
+			PipelineLoopSpec: pipelineLoopSpec,
+			Params:           run.Spec.Params,
+		})
+		if marshal != nil && err == nil {
+			hashSum = fmt.Sprintf("%x", md5.Sum(marshal))
+			taskCache, err := c.cacheStore.Get(hashSum)
+			if err == nil && taskCache != nil {
+				logger.Infof("Found a cached entry, for run: %s, with key:", run.Name, hashSum)
+				err := json.Unmarshal([]byte(taskCache.TaskOutput), &run.Status.Results)
+				if err != nil {
+					logger.Errorf("error while unmarshal of task output. %v", err)
+				}
+				run.Status.MarkRunSucceeded(pipelineloopv1alpha1.PipelineLoopRunReasonCacheHit.String(),
+					"A cached result of the previous run was found.")
+				return nil
+			}
+		}
+		if err != nil {
+			logger.Warnf("failed marshalling the spec, for pipelineloop: %s", pipelineLoopMeta.Name)
+		}
+	}
+	if highestIteration > 0 {
+		updateRunStatus(run, "last-idx", fmt.Sprintf("%d", highestIteration))
+		updateRunStatus(run, "last-elem", fmt.Sprintf("%s", iterationElements[highestIteration-1]))
+	}
 	// Run is cancelled, just cancel all the running instance and return
 	if run.IsCancelled() {
 		if len(failedPrs) > 0 {
@@ -403,9 +418,7 @@ func (c *Reconciler) reconcile(ctx context.Context, run *v1alpha1.Run, status *p
 			if run.HasTimedOut(c.clock) { // This check is only possible if we are on tekton 0.27.0 +
 				reason = v1alpha1.RunReasonTimedOut
 			}
-			run.Status.MarkRunFailed(reason,
-				"Run %s/%s was cancelled",
-				run.Namespace, run.Name)
+			run.Status.MarkRunFailed(reason, "Run %s/%s was cancelled", run.Namespace, run.Name)
 		}
 
 		for _, currentRunningPr := range currentRunningPrs {
@@ -437,7 +450,7 @@ func (c *Reconciler) reconcile(ctx context.Context, run *v1alpha1.Run, status *p
 			RunStatusFields: runv1alpha1.RunStatusFields{
 				StartTime:      run.Status.StartTime.DeepCopy(),
 				CompletionTime: run.Status.CompletionTime.DeepCopy(),
-				Results:        nil,
+				Results:        run.Status.Results,
 				RetriesStatus:  nil,
 				ExtraFields:    runtime.RawExtension{},
 			},
@@ -460,7 +473,7 @@ func (c *Reconciler) reconcile(ctx context.Context, run *v1alpha1.Run, status *p
 			if err != nil {
 				return err
 			}
-			_, err = c.pipelineClientSet.TektonV1beta1().PipelineRuns(failedPr.Namespace).
+			_, _ = c.pipelineClientSet.TektonV1beta1().PipelineRuns(failedPr.Namespace).
 				Patch(ctx, failedPr.Name, types.MergePatchType, patch, metav1.PatchOptions{})
 			pr, err := c.createPipelineRun(ctx, logger, pipelineLoopSpec, run, highestIteration, iterationElements)
 			if err != nil {
@@ -506,10 +519,7 @@ func (c *Reconciler) reconcile(ctx context.Context, run *v1alpha1.Run, status *p
 		// All task finished
 		run.Status.MarkRunSucceeded(pipelineloopv1alpha1.PipelineLoopRunReasonSucceeded.String(),
 			"All PipelineRuns completed successfully")
-		run.Status.Results = []runv1alpha1.RunResult{{
-			Name:  "condition",
-			Value: "succeeded",
-		}}
+		updateRunStatus(run, "condition", "succeeded")
 		return nil
 	}
 	// Before starting up another PipelineRun, check if the run was cancelled.
@@ -581,7 +591,7 @@ func (c *Reconciler) getPipelineLoop(ctx context.Context, run *v1alpha1.Run) (*m
 			run.Status.MarkRunFailed(pipelineloopv1alpha1.PipelineLoopRunReasonCouldntGetPipelineLoop.String(),
 				"Error retrieving PipelineLoop for Run %s/%s: %s",
 				run.Namespace, run.Name, err)
-			return nil, nil, fmt.Errorf("Error retrieving PipelineLoop for Run %s: %w", fmt.Sprintf("%s/%s", run.Namespace, run.Name), err)
+			return nil, nil, fmt.Errorf("error retrieving PipelineLoop for Run %s: %w", fmt.Sprintf("%s/%s", run.Namespace, run.Name), err)
 		}
 		pipelineLoopMeta = tl.ObjectMeta
 		pipelineLoopSpec = tl.Spec
@@ -591,7 +601,7 @@ func (c *Reconciler) getPipelineLoop(ctx context.Context, run *v1alpha1.Run) (*m
 			run.Status.MarkRunFailed(pipelineloopv1alpha1.PipelineLoopRunReasonCouldntGetPipelineLoop.String(),
 				"Error unmarshal PipelineLoop spec for Run %s/%s: %s",
 				run.Namespace, run.Name, err)
-			return nil, nil, fmt.Errorf("Error unmarshal PipelineLoop spec for Run %s: %w", fmt.Sprintf("%s/%s", run.Namespace, run.Name), err)
+			return nil, nil, fmt.Errorf("error unmarshal PipelineLoop spec for Run %s: %w", fmt.Sprintf("%s/%s", run.Namespace, run.Name), err)
 		}
 		pipelineLoopMeta = metav1.ObjectMeta{Name: run.Name,
 			Namespace:       run.Namespace,
@@ -603,7 +613,7 @@ func (c *Reconciler) getPipelineLoop(ctx context.Context, run *v1alpha1.Run) (*m
 		run.Status.MarkRunFailed(pipelineloopv1alpha1.PipelineLoopRunReasonCouldntGetPipelineLoop.String(),
 			"Missing spec.ref.name for Run %s/%s",
 			run.Namespace, run.Name)
-		return nil, nil, fmt.Errorf("Missing spec.ref.name for Run %s", fmt.Sprintf("%s/%s", run.Namespace, run.Name))
+		return nil, nil, fmt.Errorf("missing spec.ref.name for Run %s", fmt.Sprintf("%s/%s", run.Namespace, run.Name))
 	}
 	// pass down the run's serviceAccountName and podTemplate if they were not configured in the loop spec
 	if pipelineLoopSpec.PodTemplate == nil && run.Spec.PodTemplate != nil {
@@ -613,6 +623,28 @@ func (c *Reconciler) getPipelineLoop(ctx context.Context, run *v1alpha1.Run) (*m
 		pipelineLoopSpec.ServiceAccountName = run.Spec.ServiceAccountName
 	}
 	return &pipelineLoopMeta, &pipelineLoopSpec, nil
+}
+
+func updateRunStatus(run *v1alpha1.Run, resultName string, resultVal string) bool {
+	indexResultLastIdx := -1
+	// if Run already has resultName, then update it else append.
+	for i, res := range run.Status.Results {
+		if res.Name == resultName {
+			indexResultLastIdx = i
+		}
+	}
+	if indexResultLastIdx >= 0 {
+		run.Status.Results[indexResultLastIdx] = v1alpha1.RunResult{
+			Name:  resultName,
+			Value: resultVal,
+		}
+	} else {
+		run.Status.Results = append(run.Status.Results, v1alpha1.RunResult{
+			Name:  resultName,
+			Value: resultVal,
+		})
+	}
+	return true
 }
 
 func (c *Reconciler) createPipelineRun(ctx context.Context, logger *zap.SugaredLogger, tls *pipelineloopv1alpha1.PipelineLoopSpec, run *v1alpha1.Run, iteration int, iterationElements []interface{}) (*v1beta1.PipelineRun, error) {
@@ -714,7 +746,7 @@ func (c *Reconciler) updatePipelineRunStatus(ctx context.Context, iterationEleme
 	if err != nil {
 		return 0, nil, nil, fmt.Errorf("could not list PipelineRuns %#v", err)
 	}
-	if pipelineRuns == nil || len(pipelineRuns) == 0 {
+	if len(pipelineRuns) == 0 {
 		return 0, nil, nil, nil
 	}
 	status.CurrentRunning = 0
@@ -757,10 +789,7 @@ func (c *Reconciler) updatePipelineRunStatus(ctx context.Context, iterationEleme
 					// Mark run successful and stop the loop pipelinerun
 					run.Status.MarkRunSucceeded(pipelineloopv1alpha1.PipelineLoopRunReasonSucceeded.String(),
 						"PipelineRuns completed successfully with the conditions are met")
-					run.Status.Results = []runv1alpha1.RunResult{{
-						Name:  "condition",
-						Value: "pass",
-					}}
+					updateRunStatus(run, "condition", "pass")
 				}
 			}
 		}
@@ -825,10 +854,7 @@ func (c *Reconciler) updatePipelineRunStatus(ctx context.Context, iterationEleme
 					// Mark run successful and stop the loop pipelinerun
 					run.Status.MarkRunSucceeded(pipelineloopv1alpha1.PipelineLoopRunReasonSucceeded.String(),
 						"PipelineRuns completed successfully with the conditions are met")
-					run.Status.Results = []runv1alpha1.RunResult{{
-						Name:  "condition",
-						Value: "pass",
-					}}
+					updateRunStatus(run, "condition", "pass")
 					break
 				}
 			}
@@ -844,10 +870,7 @@ func (c *Reconciler) updatePipelineRunStatus(ctx context.Context, iterationEleme
 					// Mark run successful and stop the loop pipelinerun
 					run.Status.MarkRunSucceeded(pipelineloopv1alpha1.PipelineLoopRunReasonSucceeded.String(),
 						"PipelineRuns completed successfully with the conditions are met")
-					run.Status.Results = []runv1alpha1.RunResult{{
-						Name:  "condition",
-						Value: "pass",
-					}}
+					updateRunStatus(run, "condition", "pass")
 					break
 				}
 			}
