@@ -24,6 +24,10 @@ spec:
               key: objectStorePort
         - name: OBJECTSTORECONFIG_SECURE
           value: "false"
+        - name: CLIENTQPS
+          value: "50"
+        - name: CLIENTBURST
+          value: "50"
         - name: OBJECTSTORECONFIG_BUCKETNAME
           valueFrom:
             configMapKeyRef:
@@ -106,6 +110,11 @@ spec:
             configMapKeyRef:
               name: kfp-tekton-config
               key: artifact_image
+        - name: MOVERESULTS_IMAGE
+          valueFrom:
+            configMapKeyRef:
+              name: kfp-tekton-config
+              key: moveresults_image
         - name: INJECT_DEFAULT_SCRIPT
           valueFrom:
             configMapKeyRef:

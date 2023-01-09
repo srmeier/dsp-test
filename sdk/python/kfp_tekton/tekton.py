@@ -179,7 +179,6 @@ def CEL_ConditionOp(condition_statement):
            DEFAULT_CONDITION_OUTPUT_KEYWORD)
     ConditionOp_template = components.load_component_from_text(ConditionOp_yaml)
     ConditionOp = ConditionOp_template(condition_statement)
-    ConditionOp.add_pod_annotation("valid_container", "false")
     return ConditionOp
 
 
@@ -239,23 +238,41 @@ class Loop(dsl.ParallelFor):
 
   @classmethod
   def sequential(cls,
-                 loop_args: _for_loop.ItemList):
-    return cls(loop_args=loop_args, parallelism=1)
+                 loop_args: _for_loop.ItemList,
+                 extra_fields: Optional[dict] = None,
+                 valid_extra_field_values: Optional[dict] = None):
+    return cls(loop_args=loop_args,
+               parallelism=1,
+               extra_fields=extra_fields,
+               valid_extra_field_values=valid_extra_field_values)
 
   @classmethod
   def from_string(cls,
                   loop_args: Union[str, _pipeline_param.PipelineParam],
                   separator: Optional[Union[str, _pipeline_param.PipelineParam]] = None,
-                  parallelism: Optional[int] = None):
-    return cls(loop_args=loop_args, separator=separator, parallelism=parallelism)
+                  parallelism: Optional[int] = None,
+                  extra_fields: Optional[dict] = None,
+                  valid_extra_field_values: Optional[dict] = None):
+    return cls(loop_args=loop_args,
+               separator=separator,
+               parallelism=parallelism,
+               extra_fields=extra_fields,
+               valid_extra_field_values=valid_extra_field_values)
 
   @classmethod
   def range(cls,
             start: Union[_Num, PipelineParam],
             end: Union[_Num, PipelineParam],
             step: Optional[Union[_Num, PipelineParam]] = None,
-            parallelism: Optional[int] = None):
-    return cls(start=start, step=step, end=end, parallelism=parallelism)
+            parallelism: Optional[int] = None,
+            extra_fields: Optional[dict] = None,
+            valid_extra_field_values: Optional[dict] = None):
+    return cls(start=start,
+               step=step,
+               end=end,
+               parallelism=parallelism,
+               extra_fields=extra_fields,
+               valid_extra_field_values=valid_extra_field_values)
 
   def add_pod_annotation(self, name: str, value: str):
     """Adds a pod's metadata annotation.
@@ -280,6 +297,9 @@ class Loop(dsl.ParallelFor):
   def _next_id(self):
     return str(_pipeline.Pipeline.get_default_pipeline().get_next_group_id())
 
+  def _seek_id(self):
+    return str(_pipeline.Pipeline.get_default_pipeline().group_id)
+
   def __init__(self,
                loop_args: Union[str,
                                 _for_loop.ItemList,
@@ -288,7 +308,9 @@ class Loop(dsl.ParallelFor):
                end: Union[_Num, PipelineParam, None] = None,
                step: Union[_Num, PipelineParam, None] = None,
                separator: Optional[Union[str, _pipeline_param.PipelineParam]] = None,
-               parallelism: Optional[int] = None):
+               parallelism: Optional[int] = None,
+               extra_fields: Optional[dict] = None,
+               valid_extra_field_values: Optional[dict] = None):
     self.start = None
     self.end = None
     self.step = None
@@ -296,6 +318,21 @@ class Loop(dsl.ParallelFor):
     self.iteration_number = None
     self.pod_annotations = {}
     self.pod_labels = {}
+    self.iterate_param_pass_style = None
+    self.item_pass_style = None
+    self.config_value_list = {"iterate_param_pass_style": ["inline", "file"],
+                              "item_pass_style": ["inline", "file"]}
+    if extra_fields:
+        if extra_fields.get('iterate_param_pass_style'):
+            self.iterate_param_pass_style = extra_fields['iterate_param_pass_style']
+        if extra_fields.get('item_pass_style'):
+            self.item_pass_style = extra_fields['item_pass_style']
+
+    # Update allowed values in the extra fields
+    if valid_extra_field_values:
+        for k, v in valid_extra_field_values.items():
+            self.config_value_list[k] = v
+
     if start and end:
         super().__init__(loop_args=["iteration"], parallelism=parallelism)
         self.start = start
@@ -315,6 +352,10 @@ class Loop(dsl.ParallelFor):
             self.items_is_string = True
         else:
             super().__init__(loop_args=loop_args, parallelism=parallelism)
+            self.loop_args = TektonLoopArguments(
+                loop_args,
+                code=self._next_id(),
+            )
             self.items_is_string = False
 
         self.separator = None
@@ -323,6 +364,12 @@ class Loop(dsl.ParallelFor):
                 name=LoopArguments._make_name(self._next_id()),
                 value=separator
             )
+
+    # param_name is unique on the pipeline level but not cluster level. Therefore, we still need to replace it to a cluster
+    # unique uuid during our compiler step.
+    param_name = "-".join([_pipeline.Pipeline.get_default_pipeline().name, self.type, str(int(self._seek_id()) + 1)])
+    self.last_idx = dsl.PipelineParam(name="last-idx", op_name=param_name)
+    self.last_elem = dsl.PipelineParam(name="last-elem", op_name=param_name)
 
   def __enter__(self) -> Union[Tuple[TektonLoopIterationNumber, LoopArguments], _for_loop.LoopArguments]:
     rev = super().__enter__()

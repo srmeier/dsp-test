@@ -23,7 +23,6 @@ import uuid
 import zipfile
 import copy
 from collections import defaultdict
-from distutils.util import strtobool
 import collections
 from os import environ as env
 from typing import Callable, List, Text, Dict, Any
@@ -51,13 +50,8 @@ from kfp_tekton.tekton import TEKTON_CUSTOM_TASK_IMAGES, DEFAULT_CONDITION_OUTPU
 DEFAULT_ARTIFACT_BUCKET = env.get('DEFAULT_ARTIFACT_BUCKET', 'mlpipeline')
 DEFAULT_ARTIFACT_ENDPOINT = env.get('DEFAULT_ARTIFACT_ENDPOINT', 'minio-service.kubeflow:9000')
 DEFAULT_ARTIFACT_ENDPOINT_SCHEME = env.get('DEFAULT_ARTIFACT_ENDPOINT_SCHEME', 'http://')
-TEKTON_GLOBAL_DEFAULT_TIMEOUT = strtobool(env.get('TEKTON_GLOBAL_DEFAULT_TIMEOUT', 'false'))
 # DISABLE_CEL_CONDITION should be True until CEL is officially merged into Tekton main API.
 DISABLE_CEL_CONDITION = True
-# Default tasks timeout is one year
-DEFAULT_TIMEOUT_MINUTES = "525600m"
-# Default whole pipeline timeout is two year
-DEFAULT_TIMEOUT_WITH_FINALLY_MINUTES = "1051200m"
 # Default finally extension is 5 minutes
 DEFAULT_FINALLY_SECONDS = 300
 
@@ -143,13 +137,14 @@ class TektonCompiler(Compiler):
     self.custom_task_crs = []
     self.uuid = self._get_unique_id_code()
     self._group_names = []
-    self.pipeline_labels = {}
-    self.pipeline_annotations = {}
+    self.pipeline_labels = {'pipelines.kubeflow.org/pipelinename': '', 'pipelines.kubeflow.org/generation': ''}
+    self.pipeline_annotations = {'tekton.dev/template': ''}
     self.tekton_inline_spec = True
     self.resource_in_separate_yaml = False
     self.produce_taskspec = True
     self.security_context = None
     self.automount_service_account_token = None
+    self.group_names = {}
     super().__init__(**kwargs)
 
   def _set_pipeline_conf(self, tekton_pipeline_conf: TektonPipelineConf):
@@ -211,11 +206,13 @@ class TektonCompiler(Compiler):
     pipeline_name_copy = sanitize_k8s_name(pipeline_name, max_length=LOOP_PIPELINE_NAME_LENGTH)
     sub_group_name_copy = sanitize_k8s_name(sub_group.name, max_length=LOOP_GROUP_NAME_LENGTH, rev_truncate=True)
     self._group_names = [pipeline_name_copy, sub_group_name_copy]
+    raw_group_name = '-'.join(self._group_names)
     if self.uuid:
       self._group_names.insert(1, self.uuid)
     # pipeline name (max 40) + loop id (max 5) + group name (max 16) + two connecting dashes (2) = 63 (Max size for CRD names)
     group_name = '-'.join(self._group_names) if group_type == "loop" or \
         group_type == "graph" or group_type == 'addon' else sub_group.name
+    self.group_names[raw_group_name] = group_name
     template = {
       'metadata': {
         'name': group_name,
@@ -573,8 +570,25 @@ class TektonCompiler(Compiler):
       # get other input params
       input_helper(self.loops_pipeline[group_name], sub_group,
           self.loops_pipeline[group_name]['loop_sub_args'] + [sub_group.loop_args.full_name])
-      if sub_group.parallelism is not None:
+      if sub_group.parallelism is not None and sub_group.parallelism > 0:
         self.loops_pipeline[group_name]['spec']['parallelism'] = sub_group.parallelism
+
+      def insert_extra_config_field(config_name, config_object, extra_field_name):
+        # Default allowed values
+        config_value_list = ['inline', 'file']
+        config_value = config_object.lower()
+        # Update the list of allowed values if exist
+        if hasattr(sub_group, 'config_value_list'):
+          config_value_list = sub_group.config_value_list.get(extra_field_name, config_value_list)
+        if config_value in config_value_list:
+          self.loops_pipeline[group_name]['spec'][config_name] = config_value
+        else:
+          raise ValueError("%s value in loop %s must be one of [%s], not %s" %
+                           (config_name, group_name, ",".join(config_value_list), config_value))
+      if hasattr(sub_group, 'iterate_param_pass_style') and sub_group.iterate_param_pass_style is not None:
+        insert_extra_config_field('iterateParamPassStyle', sub_group.iterate_param_pass_style, 'iterate_param_pass_style')
+      if hasattr(sub_group, 'item_pass_style') and sub_group.item_pass_style is not None:
+        insert_extra_config_field('itemPassStyle', sub_group.item_pass_style, 'item_pass_style')
 
     return template
 
@@ -673,6 +687,8 @@ class TektonCompiler(Compiler):
                   upstream_op = pipeline.ops[upstream_op_name]
               elif upstream_op_name in opsgroups:
                   upstream_op = opsgroups[upstream_op_name]
+              elif "for-loop" in upstream_op_name:
+                continue
               else:
                   raise ValueError('compiler cannot find the ' +
                                     upstream_op_name)
@@ -746,7 +762,9 @@ class TektonCompiler(Compiler):
         if param.value:
           continue
         if param.op_name:
-          upstream_op = pipeline.ops[param.op_name]
+          upstream_op = pipeline.ops.get(param.op_name, None)
+          if not upstream_op:
+            continue
           upstream_groups, downstream_groups = \
             self._get_uncommon_ancestors(op_groups, opsgroup_groups, upstream_op, op)
           for i, group_name in enumerate(downstream_groups):
@@ -1005,13 +1023,23 @@ class TektonCompiler(Compiler):
           if i.get('image', '') in TEKTON_CUSTOM_TASK_IMAGES:
             custom_task_args = {}
             container_args = i.get('args', [])
+            custom_task_command = {}
+            container_command = i.get('command', [])
             for index, item in enumerate(container_args):
               if item.startswith('--'):
                 custom_task_args[item[2:]] = container_args[index + 1]
+            for index, item in enumerate(container_command):
+              if item.startswith('--'):
+                custom_task_command[item[2:]] = container_command[index + 1]
             non_param_keys = ['name', 'apiVersion', 'kind', 'taskSpec', 'taskRef']
             task_params = []
+            command_params = []
+            for key, value in custom_task_command.items():
+              task_params.append({'name': key, 'value': value})
+              # Parameters in command spec get higher priority
+              command_params.append(key)
             for key, value in custom_task_args.items():
-              if key not in non_param_keys:
+              if key not in non_param_keys and key not in command_params:
                 task_params.append({'name': key, 'value': value})
             task_orig_params = task_ref['params']
             task_ref = {
@@ -1282,8 +1310,6 @@ class TektonCompiler(Compiler):
       op = pipeline.ops.get(task['name'])
       if hasattr(op, 'timeout') and op.timeout > 0:
         task['timeout'] = '%ds' % op.timeout
-      else:
-        task['timeout'] = DEFAULT_TIMEOUT_MINUTES
 
     # handle resourceOp cases in pipeline
     self._process_resourceOp(task_refs, pipeline)
@@ -1393,14 +1419,10 @@ class TektonCompiler(Compiler):
       pipeline_run['spec']['taskRunSpecs'] = task_run_spec
 
     # add workflow level timeout to pipeline run
-    if not TEKTON_GLOBAL_DEFAULT_TIMEOUT or pipeline.conf.timeout:
+    if pipeline.conf.timeout and pipeline.conf.timeout > 0:
       pipeline_run['spec']['timeouts'] = {'pipeline': '0s', 'tasks': '0s'}
-      if pipeline.conf.timeout > 0:
-        pipeline_run['spec']['timeouts']['tasks'] = '%ds' % pipeline.conf.timeout
-        pipeline_run['spec']['timeouts']['pipeline'] = '%ds' % (pipeline.conf.timeout + DEFAULT_FINALLY_SECONDS)
-      else:
-        pipeline_run['spec']['timeouts']['tasks'] = DEFAULT_TIMEOUT_MINUTES
-        pipeline_run['spec']['timeouts']['pipeline'] = DEFAULT_TIMEOUT_WITH_FINALLY_MINUTES
+      pipeline_run['spec']['timeouts']['tasks'] = '%ds' % pipeline.conf.timeout
+      pipeline_run['spec']['timeouts']['pipeline'] = '%ds' % (pipeline.conf.timeout + DEFAULT_FINALLY_SECONDS)
     # generate the Tekton podTemplate for image pull secret
     if len(pipeline.conf.image_pull_secrets) > 0:
       pipeline_run['spec']['podTemplate'] = pipeline_run['spec'].get('podTemplate', {})
@@ -1587,6 +1609,11 @@ class TektonCompiler(Compiler):
 
     if pipeline_conf and pipeline_conf.data_passing_method is not None:
       workflow = fix_big_data_passing_using_volume(workflow, pipeline_conf)
+
+    if pipeline_conf and pipeline_conf.timeout > 0:
+      workflow['spec'].setdefault('timeouts', {'pipeline': '0s', 'tasks': '0s'})
+      workflow['spec']['timeouts']['tasks'] = '%ds' % pipeline_conf.timeout
+      workflow['spec']['timeouts']['pipeline'] = '%ds' % (pipeline_conf.timeout + DEFAULT_FINALLY_SECONDS)
 
     workflow.setdefault('metadata', {}).setdefault('annotations', {})['pipelines.kubeflow.org/pipeline_spec'] = \
       json.dumps(pipeline_meta.to_dict(), sort_keys=True)
@@ -1835,6 +1862,14 @@ class TektonCompiler(Compiler):
           workflow['metadata']['annotations']['tekton.dev/resource_templates'] = json.dumps(resource_templates,
                                                                                             sort_keys=True)
 
+    # Inject uuid to loop parameter task name if exist
+    if self.uuid:
+      for k, v in self.group_names.items():
+        if workflow['spec'].get('pipelineSpec'):
+          for task in workflow['spec']['pipelineSpec']['tasks']:
+            for param in task.get('params', []):
+              if isinstance(param['value'], str):
+                param['value'] = param['value'].replace(k, v)
     TektonCompiler._write_workflow(workflow=workflow, package_path=package_path)   # Tekton change
 
     # Separate custom task CR from the main workflow
@@ -1926,34 +1961,3 @@ def _validate_workflow(workflow: Dict[Text, Any]):
 
   if non_k8s_annotations:
     raise RuntimeError(error_msg_tmplt % ("annotations", json.dumps(non_k8s_annotations, sort_keys=False, indent=2)))
-
-  # TODO: Tekton pipeline parameter validation
-  #   workflow = workflow.copy()
-  #   # Working around Argo lint issue
-  #   for argument in workflow['spec'].get('arguments', {}).get('parameters', []):
-  #     if 'value' not in argument:
-  #       argument['value'] = ''
-  #   yaml_text = dump_yaml(workflow)
-  #   if '{{pipelineparam' in yaml_text:
-  #     raise RuntimeError(
-  #         '''Internal compiler error: Found unresolved PipelineParam.
-  # Please create a new issue at https://github.com/kubeflow/kfp-tekton/issues
-  # attaching the pipeline code and the pipeline package.'''
-  #     )
-
-  # TODO: Tekton lint, if a tool exists for it
-  #   # Running Argo lint if available
-  #   import shutil
-  #   import subprocess
-  #   argo_path = shutil.which('argo')
-  #   if argo_path:
-  #     result = subprocess.run([argo_path, 'lint', '/dev/stdin'], input=yaml_text.encode('utf-8'),
-  #                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-  #     if result.returncode:
-  #       raise RuntimeError(
-  #         '''Internal compiler error: Compiler has produced Argo-incompatible workflow.
-  # Please create a new issue at https://github.com/kubeflow/kfp-tekton/issues
-  # attaching the pipeline code and the pipeline package.
-  # Error: {}'''.format(result.stderr.decode('utf-8'))
-  #       )
-  pass

@@ -64,6 +64,13 @@ LICENSE_HEADER = textwrap.dedent("""\
 
 class TestTektonCompiler(unittest.TestCase):
 
+  def test_last_idx(self):
+    """
+    Test compiling a initial container workflow.
+    """
+    from .testdata.last_idx import pipeline
+    self._test_pipeline_workflow(pipeline, 'last_idx.yaml', skip_noninlined=False)
+
   def test_init_container_workflow(self):
     """
     Test compiling a initial container workflow.
@@ -183,12 +190,47 @@ class TestTektonCompiler(unittest.TestCase):
     from .testdata.tekton_loop_dsl import pipeline
     self._test_pipeline_workflow(pipeline, 'tekton_loop_dsl.yaml')
 
+  def test_nested_loop_counter_param_workflow(self):
+    """
+    Test compiling a loop workflow using tekton nested loop with counter params.
+    """
+    from .testdata.nested_loop_counter_param import output_in_range_and_pass
+    self._test_pipeline_workflow(output_in_range_and_pass, 'nested_loop_counter_param.yaml')
+
+  def test_nested_loop_same_arg_workflow(self):
+    """
+    Test compiling a nested loop with same argument workflow.
+    """
+    from .testdata.nested_loop_same_arg import loop_multi
+    self._test_pipeline_workflow(loop_multi, 'nested_loop_same_arg.yaml')
+
+  def test_nested_loop_with_underscore_workflow(self):
+    """
+    Test compiling a nested loop with underscore argument workflow.
+    """
+    from .testdata.nested_loop_with_underscore import double_loop_with_underscore
+    self._test_pipeline_workflow(double_loop_with_underscore, 'nested_loop_with_underscore.yaml')
+
   def test_loop_with_numeric_workflow(self):
     """
     Test compiling a loop with numeric inputs in workflow.
     """
     from .testdata.loop_with_numeric import pipeline
     self._test_pipeline_workflow(pipeline, 'loop_with_numeric.yaml')
+
+  def test_nested_loop_counter_workflow(self):
+    """
+    Test compiling nested loop counter in workflow to verify parameters are generated correctly.
+    """
+    from .testdata.nested_loop_counter import loop_3_range
+    self._test_pipeline_workflow(loop_3_range, 'nested_loop_counter.yaml')
+
+  def test_nested_loop_param_workflow(self):
+    """
+    Test compiling nested loop param in workflow to verify parameters are generated correctly.
+    """
+    from .testdata.nested_loop_param import loop_3_range
+    self._test_pipeline_workflow(loop_3_range, 'nested_loop_param.yaml')
 
   def test_loop_with_step_workflow(self):
     """
@@ -592,6 +634,16 @@ class TestTektonCompiler(unittest.TestCase):
     from .testdata.timeout import timeout_sample_pipeline
     self._test_pipeline_workflow(timeout_sample_pipeline, 'timeout.yaml', skip_noninlined=True)
 
+  def test_timeout_config_workflow(self):
+    """
+    Test compiling a step level timeout config workflow.
+    """
+    from .testdata.timeout_config import timeout_sample_pipeline
+    from kfp import dsl
+    pipeline_conf = dsl.PipelineConf()
+    pipeline_conf.set_timeout(100)
+    self._test_pipeline_workflow(timeout_sample_pipeline, 'timeout_config.yaml', pipeline_conf=pipeline_conf, skip_noninlined=True)
+
   def test_display_name_workflow(self):
     """
     Test compiling a step level timeout workflow.
@@ -805,7 +857,8 @@ class TestTektonCompiler(unittest.TestCase):
                               pipeline_function,
                               pipeline_yaml,
                               normalize_compiler_output_function=None,
-                              tekton_pipeline_conf=TektonPipelineConf()):
+                              tekton_pipeline_conf=TektonPipelineConf(),
+                              pipeline_conf=None):
     test_data_dir = os.path.join(os.path.dirname(__file__), 'testdata')
     golden_yaml_file = os.path.join(test_data_dir, pipeline_yaml)
     temp_dir = tempfile.mkdtemp()
@@ -814,7 +867,8 @@ class TestTektonCompiler(unittest.TestCase):
     try:
       compiler.TektonCompiler().compile(pipeline_function,
                                         compiled_yaml_file,
-                                        tekton_pipeline_conf=tekton_pipeline_conf)
+                                        tekton_pipeline_conf=tekton_pipeline_conf,
+                                        pipeline_conf=pipeline_conf)
       with open(compiled_yaml_file, 'r') as f:
         f = normalize_compiler_output_function(
           f.read()) if normalize_compiler_output_function else f
@@ -828,12 +882,14 @@ class TestTektonCompiler(unittest.TestCase):
                               pipeline_yaml,
                               normalize_compiler_output_function=None,
                               tekton_pipeline_conf=TektonPipelineConf(),
-                              skip_noninlined=False):
+                              skip_noninlined=False,
+                              pipeline_conf=None):
     self._test_pipeline_workflow_inlined_spec(
       pipeline_function=pipeline_function,
       pipeline_yaml=pipeline_yaml,
       normalize_compiler_output_function=normalize_compiler_output_function,
-      tekton_pipeline_conf=tekton_pipeline_conf)
+      tekton_pipeline_conf=tekton_pipeline_conf,
+      pipeline_conf=pipeline_conf)
     if not skip_noninlined:
       test_data_dir = os.path.join(os.path.dirname(__file__), 'testdata')
       golden_yaml_file = os.path.join(test_data_dir, pipeline_yaml.replace(".yaml", "") + "_noninlined.yaml")
@@ -843,7 +899,8 @@ class TestTektonCompiler(unittest.TestCase):
       try:
         compiler.TektonCompiler().compile(pipeline_function,
                                           compiled_yaml_file,
-                                          tekton_pipeline_conf=tekton_pipeline_conf)
+                                          tekton_pipeline_conf=tekton_pipeline_conf,
+                                          pipeline_conf=pipeline_conf)
         with open(compiled_yaml_file, 'r') as f:
           f = normalize_compiler_output_function(
             f.read()) if normalize_compiler_output_function else f

@@ -27,11 +27,15 @@ metadata:
     tekton.dev/artifact_items: '{"exit-handler": [], "frequent-word": [["word", "$(results.word.path)"]],
       "save-message": []}'
     sidecar.istio.io/inject: "false"
+    tekton.dev/template: ''
     pipelines.kubeflow.org/big_data_passing_format: $(workspaces.$TASK_NAME.path)/artifacts/$ORIG_PR_NAME/$TASKRUN_NAME/$TASK_PARAM_NAME
     pipelines.kubeflow.org/pipeline_spec: '{"description": "Get Most Frequent Word
       and Save to GCS", "inputs": [{"default": "When flies fly behind flies", "name":
       "message"}, {"default": "default_output", "name": "outputpath"}], "name": "Save
       Most Frequent Word"}'
+  labels:
+    pipelines.kubeflow.org/pipelinename: ''
+    pipelines.kubeflow.org/generation: ''
 spec:
   params:
   - name: message
@@ -76,7 +80,6 @@ spec:
           annotations:
             pipelines.kubeflow.org/component_spec_digest: '{"name": "frequent-word",
               "outputs": [{"name": "word", "type": "String"}], "version": "frequent-word@sha256=8ffbb183d49c639c5884fc04232d3589916ed74ab82dc713617d8896180f6a65"}'
-      timeout: 525600m
     - name: save-message
       params:
       - name: frequent-word-word
@@ -108,7 +111,6 @@ spec:
           annotations:
             pipelines.kubeflow.org/component_spec_digest: '{"name": "save-message",
               "outputs": [], "version": "save-message@sha256=496ed803b1043558dc383b302185854d3e343fd33fd3a4c7a9e5d11598d0afe3"}'
-      timeout: 525600m
     finally:
     - name: exit-handler
       taskSpec:
@@ -125,12 +127,8 @@ spec:
           annotations:
             pipelines.kubeflow.org/component_spec_digest: '{"name": "exit-handler",
               "outputs": [], "version": "exit-handler@sha256=f602919c39b5b69833987b005c4e28a099a234d24e004890803e3de1900525bf"}'
-      timeout: 525600m
   taskRunSpecs:
   - pipelineTaskName: save-message
     taskPodTemplate:
       nodeSelector:
         kubernetes.io/os: linux
-  timeouts:
-    pipeline: 1051200m
-    tasks: 525600m
