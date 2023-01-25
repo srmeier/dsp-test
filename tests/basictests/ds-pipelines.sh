@@ -12,10 +12,16 @@ os::test::junit::declare_suite_start "$MY_SCRIPT"
 function check_resources() {
     header "Testing Data Science Pipelines installation"
     os::cmd::expect_success "oc project ${ODHPROJECT}"
-    os::cmd::try_until_text "oc get crd pipelineruns.tekton.dev " "pipelineruns.tekton.dev" $odhdefaulttimeout $odhdefaultinterval
+    os::cmd::try_until_text "oc get crd pipelineruns.tekton.dev" "pipelineruns.tekton.dev" $odhdefaulttimeout $odhdefaultinterval
     os::cmd::try_until_text "oc get pods -l application-crd-id=data-science-pipelines --field-selector='status.phase!=Running,status.phase!=Completed' -o jsonpath='{$.items[*].metadata.name}' | wc -w" "0" $odhdefaulttimeout $odhdefaultinterval
     running_pods=$(oc get pods -l application-crd-id=data-science-pipelines --field-selector='status.phase=Running' -o jsonpath='{$.items[*].metadata.name}' | wc -w)
     os::cmd::expect_success "if [ "$running_pods" -gt "0" ]; then exit 0; else exit 1; fi"
+}
+
+function check_mariadb_backup() {
+    header "Check if MariaDB backup comes up correctly"
+    os::cmd::expect_success "oc get cronjob mariadb-backup"
+    os::cmd::expect_success "oc create job --from=cronjob/mariadb-backup mariadb-backup"
 }
 
 function check_ui_overlay() {
@@ -85,6 +91,7 @@ function delete_pipeline() {
 }
 
 check_resources
+check_mariadb_backup
 check_ui_overlay
 create_pipeline
 list_pipelines
