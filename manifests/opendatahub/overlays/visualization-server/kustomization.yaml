@@ -1,0 +1,33 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  # CustomResourceDefinitions
+  - ./viewers.yaml
+
+  # Deployments
+  - ./ds-pipeline-viewer-crd-deployment.yaml
+  - ./ds-pipeline-visualizationserver-deployment.yaml
+
+  # Rolebindings
+  - ./ds-pipeline-viewer-crd-binding.yaml
+
+  # Roles
+  - ./ds-pipeline-viewer-controller-role.yaml
+
+  # ServiceAccounts
+  - ./ds-pipeline-viewer-crd-sa.yaml
+  - ./ds-pipeline-viewer-sa.yaml
+  - ./ds-pipeline-visualizationserver-sa.yaml
+
+  # Services
+  - ./ds-pipeline-visualizationserver-svc.yaml
+
+images:
+  - name: viewer-crd-controller
+    newName: gcr.io/ml-pipeline/viewer-crd-controller
+    newTag: 1.7.0
+  - name: visualization-server
+    newName: gcr.io/ml-pipeline/visualization-server
+    newTag: 1.7.0
