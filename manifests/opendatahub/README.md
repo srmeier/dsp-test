@@ -7,21 +7,41 @@ Data Science Pipelines is the Open Data Hub's pipeline solution for data scienti
 
 ### Prerequisites
 
+#### Requirements
 1. The cluster needs to be OpenShift 4.9 or higher
-2. OpenShift Pipelines 1.7.2 or higher needs to be installed on the cluster
-3. The Open Data Hub operator needs to be installed
-4. The default installation namespace for Data Science Pipelines is `odh-applications`. This namespace will need to be created. In case you wish to install in a custom location, create it and update the kfdef as documented below.
+2. The [oc client](https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/latest/openshift-client-linux.tar.gz) is installed and you are logged into this cluster.
+3. The following Operators must be installed on the cluster.  (See [How to Install an Operator](#installing-a-prerequisite-operator))
+    * The Open Data Hub operator (See official [documentation](https://opendatahub.io/docs/getting-started/quick-installation.html)). 
+    * OpenShift Pipelines 1.7.2 or higher
+4. The default installation namespace for Data Science Pipelines is `odh-applications`. If it hasn't already, this namespace will need to be created (via `oc new-project odh-applications`). In case you wish to install in a custom location, create it and update the kfdef as documented below.
+
+#### Installing a Prerequisite Operator
+The installation of Data Science Pipelines requires a few Operators to be installed as a prerequisite.  Follow these steps to install an Operator from OperatorHub:
+
+1. Log into the OpenShift Console web interface
+2. Ensure the "Administrator" view is active (rather than "Developer", visible on left-hand sidebar)
+3. Click the "Operators" sidebar menu item, then select the "OperatorHub" sub-item
+4. A list of all available operators will be shown.  Use the search bar to filter for the one you're looking for (ie "OpenShift Pipelines" or "Open Data Hub")
+5. Click the tile for the Operator you'd like to install. A popup dialog/quickstart will be shown. Click "Install".
+6. Select installation parameters (such as Update Channel/Approval mode) when prompted.  Typically, the default values are usually fine as-is.
+7. Click "Install".  You will be brought to an installation progress page; wait a few minutes for installation to complete.
 
 ### Installation Steps
 
 1. Ensure that the prerequisites are met.
-2. Apply the kfdef at [kfctl_openshift_ds-pipelines.yaml](https://github.com/opendatahub-io/odh-manifests/blob/master/kfdef/kfctl_openshift_ds-pipelines.yaml). You may need to update the `namespace` field under `metadata` in case you want to deploy in a namespace that isn't `odh-applications`.
-3. To find the url for Data Science pipelines, you can run the following command.
+2. Apply the kfdef at [kfctl_openshift_ds-pipelines.yaml](https://github.com/opendatahub-io/odh-manifests/blob/master/kfdef/kfctl_openshift_ds-pipelines.yaml) via `oc apply -n odh-applications -f kfctl_openshift_ds-pipelines.yaml`. 
+
+Note that you may need to update the `namespace` field under `metadata` in case you want to deploy in a namespace that isn't `odh-applications`.
+
+### Accessing the UI
+* To find the url for Data Science pipelines, you can run the following command.
     ```bash
     $ oc get route -n <kdef_namespace> ds-pipeline-ui -o jsonpath='{.spec.host}'
     ```
     The value of `<kfdef_namespace>` should match the namespace field of the kfdef that you applied.
-4. Alternatively, you can access the route via the console. To do so:
+    You may need to append the protocol to the route (ie `https://`), but this can otherwise be pasted into a browser to access the UI
+
+* Alternatively, you can access the route via the console. To do so:
 
     1. Go to `<kfdef_namespace>`
     2. Click on `Networking` in the sidebar on the left side.
