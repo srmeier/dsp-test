@@ -1,11 +1,13 @@
 # Each list is sorted alphabetically, additions should maintain that order
 approvers:
-- anishasthana
-- gmfrasca
-- rimolive
-
+  - gmfrasca
+  - gregsheremeta
+  - HumairAK
+  - rimolive
 reviewers:
-- anishasthana
-- gmfrasca
-- rimolive
-- DharmitD
+  - DharmitD
+  - gmfrasca
+  - gregsheremeta
+  - harshad16
+  - HumairAK
+  - rimolive
